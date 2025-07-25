@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.weather.mapper.MeteoWeatherCodeDictMapper">
+    
+    <resultMap type="MeteoWeatherCodeDict" id="MeteoWeatherCodeDictResult">
+        <result property="code"    column="code"    />
+        <result property="descriptionEn"    column="description_en"    />
+        <result property="descriptionCn"    column="description_cn"    />
+    </resultMap>
+
+    <sql id="selectMeteoWeatherCodeDictVo">
+        select code, description_en, description_cn from meteo_weather_code_dict
+    </sql>
+
+    <select id="selectMeteoWeatherCodeDictList" parameterType="MeteoWeatherCodeDict" resultMap="MeteoWeatherCodeDictResult">
+        <include refid="selectMeteoWeatherCodeDictVo"/>
+        <where>  
+            <if test="descriptionEn != null  and descriptionEn != ''"> and description_en = #{descriptionEn}</if>
+            <if test="descriptionCn != null  and descriptionCn != ''"> and description_cn = #{descriptionCn}</if>
+        </where>
+    </select>
+    
+    <select id="selectMeteoWeatherCodeDictByCode" parameterType="Long" resultMap="MeteoWeatherCodeDictResult">
+        <include refid="selectMeteoWeatherCodeDictVo"/>
+        where code = #{code}
+    </select>
+
+    <insert id="insertMeteoWeatherCodeDict" parameterType="MeteoWeatherCodeDict">
+        insert into meteo_weather_code_dict
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="code != null">code,</if>
+            <if test="descriptionEn != null">description_en,</if>
+            <if test="descriptionCn != null">description_cn,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="code != null">#{code},</if>
+            <if test="descriptionEn != null">#{descriptionEn},</if>
+            <if test="descriptionCn != null">#{descriptionCn},</if>
+         </trim>
+    </insert>
+
+    <update id="updateMeteoWeatherCodeDict" parameterType="MeteoWeatherCodeDict">
+        update meteo_weather_code_dict
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="descriptionEn != null">description_en = #{descriptionEn},</if>
+            <if test="descriptionCn != null">description_cn = #{descriptionCn},</if>
+        </trim>
+        where code = #{code}
+    </update>
+
+    <delete id="deleteMeteoWeatherCodeDictByCode" parameterType="Long">
+        delete from meteo_weather_code_dict where code = #{code}
+    </delete>
+
+    <delete id="deleteMeteoWeatherCodeDictByCodes" parameterType="String">
+        delete from meteo_weather_code_dict where code in 
+        <foreach item="code" collection="array" open="(" separator="," close=")">
+            #{code}
+        </foreach>
+    </delete>
+</mapper>

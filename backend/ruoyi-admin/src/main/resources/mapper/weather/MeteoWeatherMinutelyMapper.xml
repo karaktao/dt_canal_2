@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.weather.mapper.MeteoWeatherMinutelyMapper">
+    
+    <resultMap type="MeteoWeatherMinutely" id="MeteoWeatherMinutelyResult">
+        <result property="id"    column="id"    />
+        <result property="timestamp"    column="timestamp"    />
+        <result property="temperature2m"    column="temperature_2m"    />
+        <result property="windSpeed10m"    column="wind_speed_10m"    />
+        <result property="precipitation"    column="precipitation"    />
+        <result property="precipitationProbability"    column="precipitation_probability"    />
+        <result property="visibility"    column="visibility"    />
+        <result property="weatherCode"    column="weather_code"    />
+        <result property="locationLatitude"    column="location_latitude"    />
+        <result property="locationLongitude"    column="location_longitude"    />
+        <result property="elevation"    column="elevation"    />
+        <result property="timezone"    column="timezone"    />
+    </resultMap>
+
+    <sql id="selectMeteoWeatherMinutelyVo">
+        select id, timestamp, temperature_2m, wind_speed_10m, precipitation, precipitation_probability, visibility, weather_code, location_latitude, location_longitude, elevation, timezone from meteo_weather_minutely_15
+    </sql>
+
+    <select id="selectMeteoWeatherMinutelyList" parameterType="MeteoWeatherMinutely" resultMap="MeteoWeatherMinutelyResult">
+        <include refid="selectMeteoWeatherMinutelyVo"/>
+        <where>  
+            <if test="timestamp != null "> and timestamp = #{timestamp}</if>
+            <if test="temperature2m != null "> and temperature_2m = #{temperature2m}</if>
+            <if test="windSpeed10m != null "> and wind_speed_10m = #{windSpeed10m}</if>
+            <if test="precipitation != null "> and precipitation = #{precipitation}</if>
+            <if test="precipitationProbability != null "> and precipitation_probability = #{precipitationProbability}</if>
+            <if test="visibility != null "> and visibility = #{visibility}</if>
+            <if test="weatherCode != null "> and weather_code = #{weatherCode}</if>
+            <if test="locationLatitude != null "> and location_latitude = #{locationLatitude}</if>
+            <if test="locationLongitude != null "> and location_longitude = #{locationLongitude}</if>
+            <if test="elevation != null "> and elevation = #{elevation}</if>
+            <if test="timezone != null  and timezone != ''"> and timezone = #{timezone}</if>
+        </where>
+    </select>
+    
+    <select id="selectMeteoWeatherMinutelyById" parameterType="Long" resultMap="MeteoWeatherMinutelyResult">
+        <include refid="selectMeteoWeatherMinutelyVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertMeteoWeatherMinutely" parameterType="MeteoWeatherMinutely" useGeneratedKeys="true" keyProperty="id">
+        insert into meteo_weather_minutely_15
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="timestamp != null">timestamp,</if>
+            <if test="temperature2m != null">temperature_2m,</if>
+            <if test="windSpeed10m != null">wind_speed_10m,</if>
+            <if test="precipitation != null">precipitation,</if>
+            <if test="precipitationProbability != null">precipitation_probability,</if>
+            <if test="visibility != null">visibility,</if>
+            <if test="weatherCode != null">weather_code,</if>
+            <if test="locationLatitude != null">location_latitude,</if>
+            <if test="locationLongitude != null">location_longitude,</if>
+            <if test="elevation != null">elevation,</if>
+            <if test="timezone != null">timezone,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="timestamp != null">#{timestamp},</if>
+            <if test="temperature2m != null">#{temperature2m},</if>
+            <if test="windSpeed10m != null">#{windSpeed10m},</if>
+            <if test="precipitation != null">#{precipitation},</if>
+            <if test="precipitationProbability != null">#{precipitationProbability},</if>
+            <if test="visibility != null">#{visibility},</if>
+            <if test="weatherCode != null">#{weatherCode},</if>
+            <if test="locationLatitude != null">#{locationLatitude},</if>
+            <if test="locationLongitude != null">#{locationLongitude},</if>
+            <if test="elevation != null">#{elevation},</if>
+            <if test="timezone != null">#{timezone},</if>
+         </trim>
+    </insert>
+
+    <update id="updateMeteoWeatherMinutely" parameterType="MeteoWeatherMinutely">
+        update meteo_weather_minutely_15
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="timestamp != null">timestamp = #{timestamp},</if>
+            <if test="temperature2m != null">temperature_2m = #{temperature2m},</if>
+            <if test="windSpeed10m != null">wind_speed_10m = #{windSpeed10m},</if>
+            <if test="precipitation != null">precipitation = #{precipitation},</if>
+            <if test="precipitationProbability != null">precipitation_probability = #{precipitationProbability},</if>
+            <if test="visibility != null">visibility = #{visibility},</if>
+            <if test="weatherCode != null">weather_code = #{weatherCode},</if>
+            <if test="locationLatitude != null">location_latitude = #{locationLatitude},</if>
+            <if test="locationLongitude != null">location_longitude = #{locationLongitude},</if>
+            <if test="elevation != null">elevation = #{elevation},</if>
+            <if test="timezone != null">timezone = #{timezone},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteMeteoWeatherMinutelyById" parameterType="Long">
+        delete from meteo_weather_minutely_15 where id = #{id}
+    </delete>
+
+    <delete id="deleteMeteoWeatherMinutelyByIds" parameterType="String">
+        delete from meteo_weather_minutely_15 where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

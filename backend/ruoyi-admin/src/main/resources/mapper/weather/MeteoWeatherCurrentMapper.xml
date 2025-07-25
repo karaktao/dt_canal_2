@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.weather.mapper.MeteoWeatherCurrentMapper">
+    
+    <resultMap type="MeteoWeatherCurrent" id="MeteoWeatherCurrentResult">
+        <result property="id"    column="id"    />
+        <result property="recordTime"    column="record_time"    />
+        <result property="intervalSeconds"    column="interval_seconds"    />
+        <result property="temperature2m"    column="temperature_2m"    />
+        <result property="windSpeed10m"    column="wind_speed_10m"    />
+        <result property="windDirection10m"    column="wind_direction_10m"    />
+        <result property="windGusts10m"    column="wind_gusts_10m"    />
+        <result property="rain"    column="rain"    />
+        <result property="relativeHumidity2m"    column="relative_humidity_2m"    />
+        <result property="weatherCode"    column="weather_code"    />
+        <result property="latitude"    column="latitude"    />
+        <result property="longitude"    column="longitude"    />
+        <result property="elevation"    column="elevation"    />
+        <result property="timezone"    column="timezone"    />
+        <result property="utcOffsetSeconds"    column="utc_offset_seconds"    />
+        <result property="createdAt"    column="created_at"    />
+    </resultMap>
+
+    <sql id="selectMeteoWeatherCurrentVo">
+        select id, record_time, interval_seconds, temperature_2m, wind_speed_10m, wind_direction_10m, wind_gusts_10m, rain, relative_humidity_2m, weather_code, latitude, longitude, elevation, timezone, utc_offset_seconds, created_at from meteo_weather_current
+    </sql>
+
+    <select id="selectMeteoWeatherCurrentList" parameterType="MeteoWeatherCurrent" resultMap="MeteoWeatherCurrentResult">
+        <include refid="selectMeteoWeatherCurrentVo"/>
+        <where>  
+            <if test="recordTime != null "> and record_time = #{recordTime}</if>
+            <if test="intervalSeconds != null "> and interval_seconds = #{intervalSeconds}</if>
+            <if test="temperature2m != null "> and temperature_2m = #{temperature2m}</if>
+            <if test="windSpeed10m != null "> and wind_speed_10m = #{windSpeed10m}</if>
+            <if test="windDirection10m != null "> and wind_direction_10m = #{windDirection10m}</if>
+            <if test="windGusts10m != null "> and wind_gusts_10m = #{windGusts10m}</if>
+            <if test="rain != null "> and rain = #{rain}</if>
+            <if test="relativeHumidity2m != null "> and relative_humidity_2m = #{relativeHumidity2m}</if>
+            <if test="weatherCode != null "> and weather_code = #{weatherCode}</if>
+            <if test="latitude != null "> and latitude = #{latitude}</if>
+            <if test="longitude != null "> and longitude = #{longitude}</if>
+            <if test="elevation != null "> and elevation = #{elevation}</if>
+            <if test="timezone != null  and timezone != ''"> and timezone = #{timezone}</if>
+            <if test="utcOffsetSeconds != null "> and utc_offset_seconds = #{utcOffsetSeconds}</if>
+            <if test="createdAt != null "> and created_at = #{createdAt}</if>
+        </where>
+    </select>
+    
+    <select id="selectMeteoWeatherCurrentById" parameterType="Long" resultMap="MeteoWeatherCurrentResult">
+        <include refid="selectMeteoWeatherCurrentVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertMeteoWeatherCurrent" parameterType="MeteoWeatherCurrent" useGeneratedKeys="true" keyProperty="id">
+        insert into meteo_weather_current
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="recordTime != null">record_time,</if>
+            <if test="intervalSeconds != null">interval_seconds,</if>
+            <if test="temperature2m != null">temperature_2m,</if>
+            <if test="windSpeed10m != null">wind_speed_10m,</if>
+            <if test="windDirection10m != null">wind_direction_10m,</if>
+            <if test="windGusts10m != null">wind_gusts_10m,</if>
+            <if test="rain != null">rain,</if>
+            <if test="relativeHumidity2m != null">relative_humidity_2m,</if>
+            <if test="weatherCode != null">weather_code,</if>
+            <if test="latitude != null">latitude,</if>
+            <if test="longitude != null">longitude,</if>
+            <if test="elevation != null">elevation,</if>
+            <if test="timezone != null">timezone,</if>
+            <if test="utcOffsetSeconds != null">utc_offset_seconds,</if>
+            <if test="createdAt != null">created_at,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="recordTime != null">#{recordTime},</if>
+            <if test="intervalSeconds != null">#{intervalSeconds},</if>
+            <if test="temperature2m != null">#{temperature2m},</if>
+            <if test="windSpeed10m != null">#{windSpeed10m},</if>
+            <if test="windDirection10m != null">#{windDirection10m},</if>
+            <if test="windGusts10m != null">#{windGusts10m},</if>
+            <if test="rain != null">#{rain},</if>
+            <if test="relativeHumidity2m != null">#{relativeHumidity2m},</if>
+            <if test="weatherCode != null">#{weatherCode},</if>
+            <if test="latitude != null">#{latitude},</if>
+            <if test="longitude != null">#{longitude},</if>
+            <if test="elevation != null">#{elevation},</if>
+            <if test="timezone != null">#{timezone},</if>
+            <if test="utcOffsetSeconds != null">#{utcOffsetSeconds},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+         </trim>
+    </insert>
+
+    <update id="updateMeteoWeatherCurrent" parameterType="MeteoWeatherCurrent">
+        update meteo_weather_current
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="recordTime != null">record_time = #{recordTime},</if>
+            <if test="intervalSeconds != null">interval_seconds = #{intervalSeconds},</if>
+            <if test="temperature2m != null">temperature_2m = #{temperature2m},</if>
+            <if test="windSpeed10m != null">wind_speed_10m = #{windSpeed10m},</if>
+            <if test="windDirection10m != null">wind_direction_10m = #{windDirection10m},</if>
+            <if test="windGusts10m != null">wind_gusts_10m = #{windGusts10m},</if>
+            <if test="rain != null">rain = #{rain},</if>
+            <if test="relativeHumidity2m != null">relative_humidity_2m = #{relativeHumidity2m},</if>
+            <if test="weatherCode != null">weather_code = #{weatherCode},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="elevation != null">elevation = #{elevation},</if>
+            <if test="timezone != null">timezone = #{timezone},</if>
+            <if test="utcOffsetSeconds != null">utc_offset_seconds = #{utcOffsetSeconds},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteMeteoWeatherCurrentById" parameterType="Long">
+        delete from meteo_weather_current where id = #{id}
+    </delete>
+
+    <delete id="deleteMeteoWeatherCurrentByIds" parameterType="String">
+        delete from meteo_weather_current where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

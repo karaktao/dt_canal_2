@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.infra.mapper.RwsCatalogusMapper">
+    
+    <resultMap type="RwsCatalogus" id="RwsCatalogusResult">
+        <result property="id"    column="id"    />
+        <result property="locCode"    column="loc_code"    />
+        <result property="locNaam"    column="loc_naam"    />
+        <result property="locEpsg"    column="loc_epsg"    />
+        <result property="locX"    column="loc_x"    />
+        <result property="locY"    column="loc_y"    />
+        <result property="mercatorX"    column="mercator_x"    />
+        <result property="mercatorY"    column="mercator_y"    />
+        <result property="metaParameterWatOmschrijving"    column="meta_parameter_wat_omschrijving"    />
+        <result property="metaCompartimentCode"    column="meta_compartiment_code"    />
+        <result property="metaCompartimentOms"    column="meta_compartiment_oms"    />
+        <result property="metaGrootheidCode"    column="meta_grootheid_code"    />
+        <result property="metaGrootheidOms"    column="meta_grootheid_oms"    />
+        <result property="metaParameterCode"    column="meta_parameter_code"    />
+        <result property="metaParameterOms"    column="meta_parameter_oms"    />
+        <result property="metaEenheid"    column="meta_eenheid"    />
+        <result property="metaHoedanigheid"    column="meta_hoedanigheid"    />
+        <result property="metaTypering"    column="meta_typering"    />
+        <result property="metaWaardeBewerkingsmethode"    column="meta_waarde_bewerkingsmethode"    />
+        <result property="metaBiotaxon"    column="meta_biotaxon"    />
+        <result property="metaBiotaxonCompartiment"    column="meta_biotaxon_compartiment"    />
+        <result property="metaOrgaan"    column="meta_orgaan"    />
+        <result property="hasWaterLevel"    column="has_water_level"    />
+    </resultMap>
+
+    <sql id="selectRwsCatalogusVo">
+        select id, loc_code, loc_naam, loc_epsg, loc_x, loc_y, mercator_x, mercator_y, meta_parameter_wat_omschrijving, meta_compartiment_code, meta_compartiment_oms, meta_grootheid_code, meta_grootheid_oms, meta_parameter_code, meta_parameter_oms, meta_eenheid, meta_hoedanigheid, meta_typering, meta_waarde_bewerkingsmethode, meta_biotaxon, meta_biotaxon_compartiment, meta_orgaan from rws_catalogus
+    </sql>
+
+    <select id="selectRwsCatalogusList" parameterType="RwsCatalogus" resultMap="RwsCatalogusResult">
+        <include refid="selectRwsCatalogusVo"/>
+        <where>  
+            <if test="locCode != null  and locCode != ''"> and loc_code = #{locCode}</if>
+            <if test="locNaam != null  and locNaam != ''"> and loc_naam = #{locNaam}</if>
+            <if test="locEpsg != null  and locEpsg != ''"> and loc_epsg = #{locEpsg}</if>
+            <if test="locX != null  and locX != ''"> and loc_x = #{locX}</if>
+            <if test="locY != null  and locY != ''"> and loc_y = #{locY}</if>
+            <if test="mercatorX != null  and mercatorX != ''"> and mercator_x = #{mercatorX}</if>
+            <if test="mercatorY != null  and mercatorY != ''"> and mercator_y = #{mercatorY}</if>
+            <if test="metaParameterWatOmschrijving != null  and metaParameterWatOmschrijving != ''"> and meta_parameter_wat_omschrijving = #{metaParameterWatOmschrijving}</if>
+            <if test="metaCompartimentCode != null  and metaCompartimentCode != ''"> and meta_compartiment_code = #{metaCompartimentCode}</if>
+            <if test="metaCompartimentOms != null  and metaCompartimentOms != ''"> and meta_compartiment_oms = #{metaCompartimentOms}</if>
+            <if test="metaGrootheidCode != null  and metaGrootheidCode != ''"> and meta_grootheid_code = #{metaGrootheidCode}</if>
+            <if test="metaGrootheidOms != null  and metaGrootheidOms != ''"> and meta_grootheid_oms = #{metaGrootheidOms}</if>
+            <if test="metaParameterCode != null  and metaParameterCode != ''"> and meta_parameter_code = #{metaParameterCode}</if>
+            <if test="metaParameterOms != null  and metaParameterOms != ''"> and meta_parameter_oms = #{metaParameterOms}</if>
+            <if test="metaEenheid != null  and metaEenheid != ''"> and meta_eenheid = #{metaEenheid}</if>
+            <if test="metaHoedanigheid != null  and metaHoedanigheid != ''"> and meta_hoedanigheid = #{metaHoedanigheid}</if>
+            <if test="metaTypering != null  and metaTypering != ''"> and meta_typering = #{metaTypering}</if>
+            <if test="metaWaardeBewerkingsmethode != null  and metaWaardeBewerkingsmethode != ''"> and meta_waarde_bewerkingsmethode = #{metaWaardeBewerkingsmethode}</if>
+            <if test="metaBiotaxon != null  and metaBiotaxon != ''"> and meta_biotaxon = #{metaBiotaxon}</if>
+            <if test="metaBiotaxonCompartiment != null  and metaBiotaxonCompartiment != ''"> and meta_biotaxon_compartiment = #{metaBiotaxonCompartiment}</if>
+            <if test="metaOrgaan != null  and metaOrgaan != ''"> and meta_orgaan = #{metaOrgaan}</if>
+            <if test="hasWaterLevel != null  and hasWaterLevel != ''"> and has_water_level = #{hasWaterLevel}</if>
+        </where>
+    </select>
+
+
+
+    
+    <select id="selectRwsCatalogusById" parameterType="Long" resultMap="RwsCatalogusResult">
+        <include refid="selectRwsCatalogusVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertRwsCatalogus" parameterType="RwsCatalogus" useGeneratedKeys="true" keyProperty="id">
+        insert into rws_catalogus
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="locCode != null">loc_code,</if>
+            <if test="locNaam != null">loc_naam,</if>
+            <if test="locEpsg != null">loc_epsg,</if>
+            <if test="locX != null">loc_x,</if>
+            <if test="locY != null">loc_y,</if>
+            <if test="mercatorX != null">mercator_x,</if>
+            <if test="mercatorY != null">mercator_y,</if>
+            <if test="metaParameterWatOmschrijving != null">meta_parameter_wat_omschrijving,</if>
+            <if test="metaCompartimentCode != null">meta_compartiment_code,</if>
+            <if test="metaCompartimentOms != null">meta_compartiment_oms,</if>
+            <if test="metaGrootheidCode != null">meta_grootheid_code,</if>
+            <if test="metaGrootheidOms != null">meta_grootheid_oms,</if>
+            <if test="metaParameterCode != null">meta_parameter_code,</if>
+            <if test="metaParameterOms != null">meta_parameter_oms,</if>
+            <if test="metaEenheid != null">meta_eenheid,</if>
+            <if test="metaHoedanigheid != null">meta_hoedanigheid,</if>
+            <if test="metaTypering != null">meta_typering,</if>
+            <if test="metaWaardeBewerkingsmethode != null">meta_waarde_bewerkingsmethode,</if>
+            <if test="metaBiotaxon != null">meta_biotaxon,</if>
+            <if test="metaBiotaxonCompartiment != null">meta_biotaxon_compartiment,</if>
+            <if test="metaOrgaan != null">meta_orgaan,</if>
+            <if test="hasWaterLevel != null">has_water_level,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="locCode != null">#{locCode},</if>
+            <if test="locNaam != null">#{locNaam},</if>
+            <if test="locEpsg != null">#{locEpsg},</if>
+            <if test="locX != null">#{locX},</if>
+            <if test="locY != null">#{locY},</if>
+            <if test="mercatorX != null">#{mercatorX},</if>
+            <if test="mercatorY != null">#{mercatorY},</if>
+            <if test="metaParameterWatOmschrijving != null">#{metaParameterWatOmschrijving},</if>
+            <if test="metaCompartimentCode != null">#{metaCompartimentCode},</if>
+            <if test="metaCompartimentOms != null">#{metaCompartimentOms},</if>
+            <if test="metaGrootheidCode != null">#{metaGrootheidCode},</if>
+            <if test="metaGrootheidOms != null">#{metaGrootheidOms},</if>
+            <if test="metaParameterCode != null">#{metaParameterCode},</if>
+            <if test="metaParameterOms != null">#{metaParameterOms},</if>
+            <if test="metaEenheid != null">#{metaEenheid},</if>
+            <if test="metaHoedanigheid != null">#{metaHoedanigheid},</if>
+            <if test="metaTypering != null">#{metaTypering},</if>
+            <if test="metaWaardeBewerkingsmethode != null">#{metaWaardeBewerkingsmethode},</if>
+            <if test="metaBiotaxon != null">#{metaBiotaxon},</if>
+            <if test="metaBiotaxonCompartiment != null">#{metaBiotaxonCompartiment},</if>
+            <if test="metaOrgaan != null">#{metaOrgaan},</if>
+            <if test="hasWaterLevel != null">#{hasWaterLevel},</if>
+         </trim>
+    </insert>
+
+    <update id="updateRwsCatalogus" parameterType="RwsCatalogus">
+        update rws_catalogus
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="locCode != null">loc_code = #{locCode},</if>
+            <if test="locNaam != null">loc_naam = #{locNaam},</if>
+            <if test="locEpsg != null">loc_epsg = #{locEpsg},</if>
+            <if test="locX != null">loc_x = #{locX},</if>
+            <if test="locY != null">loc_y = #{locY},</if>
+            <if test="mercatorX != null">mercator_x = #{mercatorX},</if>
+            <if test="mercatorY != null">mercator_y = #{mercatorY},</if>
+            <if test="metaParameterWatOmschrijving != null">meta_parameter_wat_omschrijving = #{metaParameterWatOmschrijving},</if>
+            <if test="metaCompartimentCode != null">meta_compartiment_code = #{metaCompartimentCode},</if>
+            <if test="metaCompartimentOms != null">meta_compartiment_oms = #{metaCompartimentOms},</if>
+            <if test="metaGrootheidCode != null">meta_grootheid_code = #{metaGrootheidCode},</if>
+            <if test="metaGrootheidOms != null">meta_grootheid_oms = #{metaGrootheidOms},</if>
+            <if test="metaParameterCode != null">meta_parameter_code = #{metaParameterCode},</if>
+            <if test="metaParameterOms != null">meta_parameter_oms = #{metaParameterOms},</if>
+            <if test="metaEenheid != null">meta_eenheid = #{metaEenheid},</if>
+            <if test="metaHoedanigheid != null">meta_hoedanigheid = #{metaHoedanigheid},</if>
+            <if test="metaTypering != null">meta_typering = #{metaTypering},</if>
+            <if test="metaWaardeBewerkingsmethode != null">meta_waarde_bewerkingsmethode = #{metaWaardeBewerkingsmethode},</if>
+            <if test="metaBiotaxon != null">meta_biotaxon = #{metaBiotaxon},</if>
+            <if test="metaBiotaxonCompartiment != null">meta_biotaxon_compartiment = #{metaBiotaxonCompartiment},</if>
+            <if test="metaOrgaan != null">meta_orgaan = #{metaOrgaan},</if>
+            <if test="hasWaterLevel != null">has_water_level = #{hasWaterLevel},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteRwsCatalogusById" parameterType="Long">
+        delete from rws_catalogus where id = #{id}
+    </delete>
+
+    <delete id="deleteRwsCatalogusByIds" parameterType="String">
+        delete from rws_catalogus where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

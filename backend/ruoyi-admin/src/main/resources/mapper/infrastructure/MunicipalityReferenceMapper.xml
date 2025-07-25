@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.infra.mapper.MunicipalityReferenceMapper">
+    
+    <resultMap type="MunicipalityReference" id="MunicipalityReferenceResult">
+        <result property="municipalityCode"    column="municipality_code"    />
+        <result property="municipalityCodeGm"    column="municipality_code_gm"    />
+        <result property="municipalityName"    column="municipality_name"    />
+        <result property="provinceCode"    column="province_code"    />
+        <result property="provinceCodePv"    column="province_code_pv"    />
+        <result property="provinceName"    column="province_name"    />
+    </resultMap>
+
+    <sql id="selectMunicipalityReferenceVo">
+        select municipality_code, municipality_code_gm, municipality_name, province_code, province_code_pv, province_name from nl_municipality_reference
+    </sql>
+
+    <select id="selectMunicipalityReferenceList" parameterType="MunicipalityReference" resultMap="MunicipalityReferenceResult">
+        <include refid="selectMunicipalityReferenceVo"/>
+        <where>  
+            <if test="municipalityCode != null  and municipalityCode != ''"> and municipality_code = #{municipalityCode}</if>
+            <if test="municipalityCodeGm != null  and municipalityCodeGm != ''"> and municipality_code_gm = #{municipalityCodeGm}</if>
+            <if test="municipalityName != null  and municipalityName != ''"> and municipality_name like concat('%', #{municipalityName}, '%')</if>
+            <if test="provinceCode != null  and provinceCode != ''"> and province_code = #{provinceCode}</if>
+            <if test="provinceCodePv != null  and provinceCodePv != ''"> and province_code_pv = #{provinceCodePv}</if>
+            <if test="provinceName != null  and provinceName != ''"> and province_name like concat('%', #{provinceName}, '%')</if>
+        </where>
+    </select>
+    
+    <select id="selectMunicipalityReferenceByMunicipalityCode" parameterType="String" resultMap="MunicipalityReferenceResult">
+        <include refid="selectMunicipalityReferenceVo"/>
+        where municipality_code = #{municipalityCode}
+    </select>
+
+    <insert id="insertMunicipalityReference" parameterType="MunicipalityReference">
+        insert into nl_municipality_reference
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="municipalityCode != null">municipality_code,</if>
+            <if test="municipalityCodeGm != null">municipality_code_gm,</if>
+            <if test="municipalityName != null">municipality_name,</if>
+            <if test="provinceCode != null">province_code,</if>
+            <if test="provinceCodePv != null">province_code_pv,</if>
+            <if test="provinceName != null">province_name,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="municipalityCode != null">#{municipalityCode},</if>
+            <if test="municipalityCodeGm != null">#{municipalityCodeGm},</if>
+            <if test="municipalityName != null">#{municipalityName},</if>
+            <if test="provinceCode != null">#{provinceCode},</if>
+            <if test="provinceCodePv != null">#{provinceCodePv},</if>
+            <if test="provinceName != null">#{provinceName},</if>
+         </trim>
+    </insert>
+
+    <update id="updateMunicipalityReference" parameterType="MunicipalityReference">
+        update nl_municipality_reference
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="municipalityCodeGm != null">municipality_code_gm = #{municipalityCodeGm},</if>
+            <if test="municipalityName != null">municipality_name = #{municipalityName},</if>
+            <if test="provinceCode != null">province_code = #{provinceCode},</if>
+            <if test="provinceCodePv != null">province_code_pv = #{provinceCodePv},</if>
+            <if test="provinceName != null">province_name = #{provinceName},</if>
+        </trim>
+        where municipality_code = #{municipalityCode}
+    </update>
+
+    <delete id="deleteMunicipalityReferenceByMunicipalityCode" parameterType="String">
+        delete from nl_municipality_reference where municipality_code = #{municipalityCode}
+    </delete>
+
+    <delete id="deleteMunicipalityReferenceByMunicipalityCodes" parameterType="String">
+        delete from nl_municipality_reference where municipality_code in 
+        <foreach item="municipalityCode" collection="array" open="(" separator="," close=")">
+            #{municipalityCode}
+        </foreach>
+    </delete>
+</mapper>

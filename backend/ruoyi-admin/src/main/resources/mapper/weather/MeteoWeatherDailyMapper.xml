@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.weather.mapper.MeteoWeatherDailyMapper">
+    
+    <resultMap type="MeteoWeatherDaily" id="MeteoWeatherDailyResult">
+        <result property="id"    column="id"    />
+        <result property="latitude"    column="latitude"    />
+        <result property="longitude"    column="longitude"    />
+        <result property="timezone"    column="timezone"    />
+        <result property="utcOffsetSeconds"    column="utc_offset_seconds"    />
+        <result property="elevation"    column="elevation"    />
+        <result property="weatherDate"    column="weather_date"    />
+        <result property="temperatureMax"    column="temperature_max"    />
+        <result property="temperatureMin"    column="temperature_min"    />
+        <result property="windDirectionDominant"    column="wind_direction_dominant"    />
+        <result property="windSpeedMax"    column="wind_speed_max"    />
+        <result property="precipitationSum"    column="precipitation_sum"    />
+        <result property="precipitationProbabilityMax"    column="precipitation_probability_max"    />
+        <result property="createdAt"    column="created_at"    />
+    </resultMap>
+
+    <sql id="selectMeteoWeatherDailyVo">
+        select id, latitude, longitude, timezone, utc_offset_seconds, elevation, weather_date, temperature_max, temperature_min, wind_direction_dominant, wind_speed_max, precipitation_sum, precipitation_probability_max, created_at from meteo_weather_daily
+    </sql>
+
+    <select id="selectMeteoWeatherDailyList" parameterType="MeteoWeatherDaily" resultMap="MeteoWeatherDailyResult">
+        <include refid="selectMeteoWeatherDailyVo"/>
+        <where>  
+            <if test="latitude != null "> and latitude = #{latitude}</if>
+            <if test="longitude != null "> and longitude = #{longitude}</if>
+            <if test="timezone != null  and timezone != ''"> and timezone = #{timezone}</if>
+            <if test="utcOffsetSeconds != null "> and utc_offset_seconds = #{utcOffsetSeconds}</if>
+            <if test="elevation != null "> and elevation = #{elevation}</if>
+            <if test="weatherDate != null "> and weather_date = #{weatherDate}</if>
+            <if test="temperatureMax != null "> and temperature_max = #{temperatureMax}</if>
+            <if test="temperatureMin != null "> and temperature_min = #{temperatureMin}</if>
+            <if test="windDirectionDominant != null "> and wind_direction_dominant = #{windDirectionDominant}</if>
+            <if test="windSpeedMax != null "> and wind_speed_max = #{windSpeedMax}</if>
+            <if test="precipitationSum != null "> and precipitation_sum = #{precipitationSum}</if>
+            <if test="precipitationProbabilityMax != null "> and precipitation_probability_max = #{precipitationProbabilityMax}</if>
+            <if test="createdAt != null "> and created_at = #{createdAt}</if>
+        </where>
+    </select>
+    
+    <select id="selectMeteoWeatherDailyById" parameterType="Long" resultMap="MeteoWeatherDailyResult">
+        <include refid="selectMeteoWeatherDailyVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertMeteoWeatherDaily" parameterType="MeteoWeatherDaily" useGeneratedKeys="true" keyProperty="id">
+        insert into meteo_weather_daily
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="latitude != null">latitude,</if>
+            <if test="longitude != null">longitude,</if>
+            <if test="timezone != null">timezone,</if>
+            <if test="utcOffsetSeconds != null">utc_offset_seconds,</if>
+            <if test="elevation != null">elevation,</if>
+            <if test="weatherDate != null">weather_date,</if>
+            <if test="temperatureMax != null">temperature_max,</if>
+            <if test="temperatureMin != null">temperature_min,</if>
+            <if test="windDirectionDominant != null">wind_direction_dominant,</if>
+            <if test="windSpeedMax != null">wind_speed_max,</if>
+            <if test="precipitationSum != null">precipitation_sum,</if>
+            <if test="precipitationProbabilityMax != null">precipitation_probability_max,</if>
+            <if test="createdAt != null">created_at,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="latitude != null">#{latitude},</if>
+            <if test="longitude != null">#{longitude},</if>
+            <if test="timezone != null">#{timezone},</if>
+            <if test="utcOffsetSeconds != null">#{utcOffsetSeconds},</if>
+            <if test="elevation != null">#{elevation},</if>
+            <if test="weatherDate != null">#{weatherDate},</if>
+            <if test="temperatureMax != null">#{temperatureMax},</if>
+            <if test="temperatureMin != null">#{temperatureMin},</if>
+            <if test="windDirectionDominant != null">#{windDirectionDominant},</if>
+            <if test="windSpeedMax != null">#{windSpeedMax},</if>
+            <if test="precipitationSum != null">#{precipitationSum},</if>
+            <if test="precipitationProbabilityMax != null">#{precipitationProbabilityMax},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+         </trim>
+    </insert>
+
+
+
+
+    <select id="selectMeteoWeatherDailyByTime" parameterType="Date" resultMap="MeteoWeatherDailyResult">
+        <include refid="selectMeteoWeatherDailyVo"/>
+        where weather_date = #{time}
+    </select>
+
+
+    <select id="selectByLocationAndDate" resultType="com.ruoyi.weather.domain.MeteoWeatherDaily">
+        SELECT *
+        FROM meteo_weather_daily
+        WHERE latitude = #{param1}
+          AND longitude = #{param2}
+          AND weather_date = #{param3}
+    </select>
+
+
+
+
+    <update id="updateMeteoWeatherDaily" parameterType="MeteoWeatherDaily">
+        update meteo_weather_daily
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="timezone != null">timezone = #{timezone},</if>
+            <if test="utcOffsetSeconds != null">utc_offset_seconds = #{utcOffsetSeconds},</if>
+            <if test="elevation != null">elevation = #{elevation},</if>
+            <if test="weatherDate != null">weather_date = #{weatherDate},</if>
+            <if test="temperatureMax != null">temperature_max = #{temperatureMax},</if>
+            <if test="temperatureMin != null">temperature_min = #{temperatureMin},</if>
+            <if test="windDirectionDominant != null">wind_direction_dominant = #{windDirectionDominant},</if>
+            <if test="windSpeedMax != null">wind_speed_max = #{windSpeedMax},</if>
+            <if test="precipitationSum != null">precipitation_sum = #{precipitationSum},</if>
+            <if test="precipitationProbabilityMax != null">precipitation_probability_max = #{precipitationProbabilityMax},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteMeteoWeatherDailyById" parameterType="Long">
+        delete from meteo_weather_daily where id = #{id}
+    </delete>
+
+    <delete id="deleteMeteoWeatherDailyByIds" parameterType="String">
+        delete from meteo_weather_daily where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

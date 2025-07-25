@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.infra.mapper.RwsVndsBridgeMapper">
+    
+    <resultMap type="RwsVndsBridge" id="RwsVndsBridgeResult">
+        <result property="Id"    column="Id"    />
+        <result property="GeoGeneration"    column="GeoGeneration"    />
+        <result property="GeoType"    column="GeoType"    />
+        <result property="Geometry"    column="Geometry"    />
+        <result property="Name"    column="Name"    />
+        <result property="FairwayId"    column="FairwayId"    />
+        <result property="FairwaySectionId"    column="FairwaySectionId"    />
+        <result property="RouteId"    column="RouteId"    />
+        <result property="RouteKmBegin"    column="RouteKmBegin"    />
+        <result property="RouteKmEnd"    column="RouteKmEnd"    />
+        <result property="Referencelevel"    column="Referencelevel"    />
+        <result property="MhwReferenceLevel"    column="MhwReferenceLevel"    />
+        <result property="VoyagePlanningPoint"    column="VoyagePlanningPoint"    />
+        <result property="AdministrationId"    column="AdministrationId"    />
+        <result property="CanOpen"    column="CanOpen"    />
+        <result property="City"    column="City"    />
+        <result property="Condition"    column="Condition"    />
+        <result property="ForeignCode"    column="ForeignCode"    />
+        <result property="HasOpeningOnOtherFairway"    column="HasOpeningOnOtherFairway"    />
+        <result property="IsRemoteControlled"    column="IsRemoteControlled"    />
+        <result property="IsrsId"    column="IsrsId"    />
+        <result property="Length"    column="Length"    />
+        <result property="MhwOffset"    column="MhwOffset"    />
+        <result property="Note"    column="Note"    />
+        <result property="NumberOfOpenings"    column="NumberOfOpenings"    />
+        <result property="OperatingTimesId"    column="OperatingTimesId"    />
+        <result property="PhoneNumber"    column="PhoneNumber"    />
+        <result property="RelatedBuildingComplexName"    column="RelatedBuildingComplexName"    />
+        <result property="Rotation"    column="Rotation"    />
+        <result property="VinCode"    column="VinCode"    />
+        <result property="Width"    column="Width"    />
+        <result property="CreatedAt"    column="CreatedAt"    />
+        <result property="GeoJSON"    column="GeoJSON"    />
+    </resultMap>
+
+    <sql id="selectRwsVndsBridgeVo">
+        select Id, GeoGeneration, GeoType, Geometry, Name, FairwayId, FairwaySectionId, RouteId, RouteKmBegin, RouteKmEnd, Referencelevel, MhwReferenceLevel, VoyagePlanningPoint, AdministrationId, CanOpen, City, Condition, ForeignCode, HasOpeningOnOtherFairway, IsRemoteControlled, IsrsId, Length, MhwOffset, Note, NumberOfOpenings, OperatingTimesId, PhoneNumber, RelatedBuildingComplexName, Rotation, VinCode, Width, CreatedAt, GeoJSON from rws_VNDS_bridge
+    </sql>
+
+    <select id="selectRwsVndsBridgeList" parameterType="RwsVndsBridge" resultMap="RwsVndsBridgeResult">
+        <include refid="selectRwsVndsBridgeVo"/>
+        <where>  
+            <if test="GeoGeneration != null "> and GeoGeneration = #{GeoGeneration}</if>
+            <if test="GeoType != null  and GeoType != ''"> and GeoType = #{GeoType}</if>
+            <if test="Geometry != null  and Geometry != ''"> and Geometry = #{Geometry}</if>
+            <if test="Name != null  and Name != ''"> and Name like concat('%', #{Name}, '%')</if>
+            <if test="FairwayId != null "> and FairwayId = #{FairwayId}</if>
+            <if test="FairwaySectionId != null "> and FairwaySectionId = #{FairwaySectionId}</if>
+            <if test="RouteId != null "> and RouteId = #{RouteId}</if>
+            <if test="RouteKmBegin != null "> and RouteKmBegin = #{RouteKmBegin}</if>
+            <if test="RouteKmEnd != null "> and RouteKmEnd = #{RouteKmEnd}</if>
+            <if test="Referencelevel != null  and Referencelevel != ''"> and Referencelevel = #{Referencelevel}</if>
+            <if test="MhwReferenceLevel != null  and MhwReferenceLevel != ''"> and MhwReferenceLevel = #{MhwReferenceLevel}</if>
+            <if test="VoyagePlanningPoint != null "> and VoyagePlanningPoint = #{VoyagePlanningPoint}</if>
+            <if test="AdministrationId != null "> and AdministrationId = #{AdministrationId}</if>
+            <if test="CanOpen != null "> and CanOpen = #{CanOpen}</if>
+            <if test="City != null  and City != ''"> and City = #{City}</if>
+            <if test="Condition != null  and Condition != ''"> and Condition = #{Condition}</if>
+            <if test="ForeignCode != null  and ForeignCode != ''"> and ForeignCode = #{ForeignCode}</if>
+            <if test="HasOpeningOnOtherFairway != null "> and HasOpeningOnOtherFairway = #{HasOpeningOnOtherFairway}</if>
+            <if test="IsRemoteControlled != null "> and IsRemoteControlled = #{IsRemoteControlled}</if>
+            <if test="IsrsId != null "> and IsrsId = #{IsrsId}</if>
+            <if test="Length != null "> and Length = #{Length}</if>
+            <if test="MhwOffset != null "> and MhwOffset = #{MhwOffset}</if>
+            <if test="Note != null  and Note != ''"> and Note = #{Note}</if>
+            <if test="NumberOfOpenings != null "> and NumberOfOpenings = #{NumberOfOpenings}</if>
+            <if test="OperatingTimesId != null "> and OperatingTimesId = #{OperatingTimesId}</if>
+            <if test="PhoneNumber != null  and PhoneNumber != ''"> and PhoneNumber = #{PhoneNumber}</if>
+            <if test="RelatedBuildingComplexName != null  and RelatedBuildingComplexName != ''"> and RelatedBuildingComplexName like concat('%', #{RelatedBuildingComplexName}, '%')</if>
+            <if test="Rotation != null "> and Rotation = #{Rotation}</if>
+            <if test="VinCode != null  and VinCode != ''"> and VinCode = #{VinCode}</if>
+            <if test="Width != null "> and Width = #{Width}</if>
+            <if test="CreatedAt != null "> and CreatedAt = #{CreatedAt}</if>
+            <if test="GeoJSON != null  and GeoJSON != ''"> and GeoJSON = #{GeoJSON}</if>
+        </where>
+    </select>
+    
+    <select id="selectRwsVndsBridgeById" parameterType="Long" resultMap="RwsVndsBridgeResult">
+        <include refid="selectRwsVndsBridgeVo"/>
+        where Id = #{Id}
+    </select>
+
+    <insert id="insertRwsVndsBridge" parameterType="RwsVndsBridge">
+        insert into rws_VNDS_bridge
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="Id != null">Id,</if>
+            <if test="GeoGeneration != null">GeoGeneration,</if>
+            <if test="GeoType != null">GeoType,</if>
+            <if test="Geometry != null">Geometry,</if>
+            <if test="Name != null">Name,</if>
+            <if test="FairwayId != null">FairwayId,</if>
+            <if test="FairwaySectionId != null">FairwaySectionId,</if>
+            <if test="RouteId != null">RouteId,</if>
+            <if test="RouteKmBegin != null">RouteKmBegin,</if>
+            <if test="RouteKmEnd != null">RouteKmEnd,</if>
+            <if test="Referencelevel != null">Referencelevel,</if>
+            <if test="MhwReferenceLevel != null">MhwReferenceLevel,</if>
+            <if test="VoyagePlanningPoint != null">VoyagePlanningPoint,</if>
+            <if test="AdministrationId != null">AdministrationId,</if>
+            <if test="CanOpen != null">CanOpen,</if>
+            <if test="City != null">City,</if>
+            <if test="Condition != null">Condition,</if>
+            <if test="ForeignCode != null">ForeignCode,</if>
+            <if test="HasOpeningOnOtherFairway != null">HasOpeningOnOtherFairway,</if>
+            <if test="IsRemoteControlled != null">IsRemoteControlled,</if>
+            <if test="IsrsId != null">IsrsId,</if>
+            <if test="Length != null">Length,</if>
+            <if test="MhwOffset != null">MhwOffset,</if>
+            <if test="Note != null">Note,</if>
+            <if test="NumberOfOpenings != null">NumberOfOpenings,</if>
+            <if test="OperatingTimesId != null">OperatingTimesId,</if>
+            <if test="PhoneNumber != null">PhoneNumber,</if>
+            <if test="RelatedBuildingComplexName != null">RelatedBuildingComplexName,</if>
+            <if test="Rotation != null">Rotation,</if>
+            <if test="VinCode != null">VinCode,</if>
+            <if test="Width != null">Width,</if>
+            <if test="CreatedAt != null">CreatedAt,</if>
+            <if test="GeoJSON != null">GeoJSON,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="Id != null">#{Id},</if>
+            <if test="GeoGeneration != null">#{GeoGeneration},</if>
+            <if test="GeoType != null">#{GeoType},</if>
+            <if test="Geometry != null">#{Geometry},</if>
+            <if test="Name != null">#{Name},</if>
+            <if test="FairwayId != null">#{FairwayId},</if>
+            <if test="FairwaySectionId != null">#{FairwaySectionId},</if>
+            <if test="RouteId != null">#{RouteId},</if>
+            <if test="RouteKmBegin != null">#{RouteKmBegin},</if>
+            <if test="RouteKmEnd != null">#{RouteKmEnd},</if>
+            <if test="Referencelevel != null">#{Referencelevel},</if>
+            <if test="MhwReferenceLevel != null">#{MhwReferenceLevel},</if>
+            <if test="VoyagePlanningPoint != null">#{VoyagePlanningPoint},</if>
+            <if test="AdministrationId != null">#{AdministrationId},</if>
+            <if test="CanOpen != null">#{CanOpen},</if>
+            <if test="City != null">#{City},</if>
+            <if test="Condition != null">#{Condition},</if>
+            <if test="ForeignCode != null">#{ForeignCode},</if>
+            <if test="HasOpeningOnOtherFairway != null">#{HasOpeningOnOtherFairway},</if>
+            <if test="IsRemoteControlled != null">#{IsRemoteControlled},</if>
+            <if test="IsrsId != null">#{IsrsId},</if>
+            <if test="Length != null">#{Length},</if>
+            <if test="MhwOffset != null">#{MhwOffset},</if>
+            <if test="Note != null">#{Note},</if>
+            <if test="NumberOfOpenings != null">#{NumberOfOpenings},</if>
+            <if test="OperatingTimesId != null">#{OperatingTimesId},</if>
+            <if test="PhoneNumber != null">#{PhoneNumber},</if>
+            <if test="RelatedBuildingComplexName != null">#{RelatedBuildingComplexName},</if>
+            <if test="Rotation != null">#{Rotation},</if>
+            <if test="VinCode != null">#{VinCode},</if>
+            <if test="Width != null">#{Width},</if>
+            <if test="CreatedAt != null">#{CreatedAt},</if>
+            <if test="GeoJSON != null">#{GeoJSON},</if>
+         </trim>
+    </insert>
+
+    <update id="updateRwsVndsBridge" parameterType="RwsVndsBridge">
+        update rws_VNDS_bridge
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="GeoGeneration != null">GeoGeneration = #{GeoGeneration},</if>
+            <if test="GeoType != null">GeoType = #{GeoType},</if>
+            <if test="Geometry != null">Geometry = #{Geometry},</if>
+            <if test="Name != null">Name = #{Name},</if>
+            <if test="FairwayId != null">FairwayId = #{FairwayId},</if>
+            <if test="FairwaySectionId != null">FairwaySectionId = #{FairwaySectionId},</if>
+            <if test="RouteId != null">RouteId = #{RouteId},</if>
+            <if test="RouteKmBegin != null">RouteKmBegin = #{RouteKmBegin},</if>
+            <if test="RouteKmEnd != null">RouteKmEnd = #{RouteKmEnd},</if>
+            <if test="Referencelevel != null">Referencelevel = #{Referencelevel},</if>
+            <if test="MhwReferenceLevel != null">MhwReferenceLevel = #{MhwReferenceLevel},</if>
+            <if test="VoyagePlanningPoint != null">VoyagePlanningPoint = #{VoyagePlanningPoint},</if>
+            <if test="AdministrationId != null">AdministrationId = #{AdministrationId},</if>
+            <if test="CanOpen != null">CanOpen = #{CanOpen},</if>
+            <if test="City != null">City = #{City},</if>
+            <if test="Condition != null">Condition = #{Condition},</if>
+            <if test="ForeignCode != null">ForeignCode = #{ForeignCode},</if>
+            <if test="HasOpeningOnOtherFairway != null">HasOpeningOnOtherFairway = #{HasOpeningOnOtherFairway},</if>
+            <if test="IsRemoteControlled != null">IsRemoteControlled = #{IsRemoteControlled},</if>
+            <if test="IsrsId != null">IsrsId = #{IsrsId},</if>
+            <if test="Length != null">Length = #{Length},</if>
+            <if test="MhwOffset != null">MhwOffset = #{MhwOffset},</if>
+            <if test="Note != null">Note = #{Note},</if>
+            <if test="NumberOfOpenings != null">NumberOfOpenings = #{NumberOfOpenings},</if>
+            <if test="OperatingTimesId != null">OperatingTimesId = #{OperatingTimesId},</if>
+            <if test="PhoneNumber != null">PhoneNumber = #{PhoneNumber},</if>
+            <if test="RelatedBuildingComplexName != null">RelatedBuildingComplexName = #{RelatedBuildingComplexName},</if>
+            <if test="Rotation != null">Rotation = #{Rotation},</if>
+            <if test="VinCode != null">VinCode = #{VinCode},</if>
+            <if test="Width != null">Width = #{Width},</if>
+            <if test="CreatedAt != null">CreatedAt = #{CreatedAt},</if>
+            <if test="GeoJSON != null">GeoJSON = #{GeoJSON},</if>
+        </trim>
+        where Id = #{Id}
+    </update>
+
+    <delete id="deleteRwsVndsBridgeById" parameterType="Long">
+        delete from rws_VNDS_bridge where Id = #{Id}
+    </delete>
+
+    <delete id="deleteRwsVndsBridgeByIds" parameterType="String">
+        delete from rws_VNDS_bridge where Id in 
+        <foreach item="Id" collection="array" open="(" separator="," close=")">
+            #{Id}
+        </foreach>
+    </delete>
+</mapper>

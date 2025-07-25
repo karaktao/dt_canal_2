@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.transport.mapper.TransportDemandMapper">
+    
+    <resultMap type="TransportDemand" id="TransportDemandResult">
+        <result property="id"    column="id"    />
+        <result property="tenantId"    column="tenant_id"    />
+        <result property="assignmentType"    column="assignment_type"    />
+        <result property="publishedBy"    column="published_by"    />
+        <result property="publishedAt"    column="published_at"    />
+        <result property="createdAt"    column="created_at"    />
+        <result property="assignedAt"    column="assigned_at"    />
+        <result property="cargoType"    column="cargo_type"    />
+        <result property="tonnageDemand"    column="tonnage_demand"    />
+        <result property="volumeDemand"    column="volume_demand"    />
+        <result property="containerDemand"    column="container_demand"    />
+        <result property="vesselId"    column="vessel_id"    />
+        <result property="mmsiNumber"    column="mmsi_number"    />
+        <result property="vesselName"    column="vessel_name"    />
+        <result property="isEmptyVessel"    column="is_empty_vessel"    />
+        <result property="tonnageAvailable"    column="tonnage_available"    />
+        <result property="volumeAvailable"    column="volume_available"    />
+        <result property="containerAvailable"    column="container_available"    />
+        <result property="isReturnTripAvailable"    column="is_return_trip_available"    />
+        <result property="vesselAvailabilityStart"    column="vessel_availability_start"    />
+        <result property="vesselAvailabilityEnd"    column="vessel_availability_end"    />
+        <result property="returnDestinationPort"    column="return_destination_port"    />
+        <result property="returnDestinationPortId"    column="return_destination_port_id"    />
+        <result property="originPort"    column="origin_port"    />
+        <result property="originPortId"    column="origin_port_id"    />
+        <result property="destinationPort"    column="destination_port"    />
+        <result property="destinationPortId"    column="destination_port_id"    />
+        <result property="departureStart"    column="departure_start"    />
+        <result property="departureEnd"    column="departure_end"    />
+        <result property="arrivalStart"    column="arrival_start"    />
+        <result property="arrivalEnd"    column="arrival_end"    />
+        <result property="arrivalEstimate"    column="arrival_estimate"    />
+        <result property="uploadTime"    column="upload_time"    />
+        <result property="unloadTime"    column="unload_time"    />
+        <result property="prioritySetting"    column="priority_setting"    />
+        <result property="status"    column="status"    />
+        <result property="intermediatePorts"    column="intermediate_ports"    />
+        <result property="geoPath"    column="geo_path"    />
+        <result property="intermediatePortsId"    column="intermediate_ports_id"    />
+        <result property="cargoProperty"    column="cargo_property"    />
+        <result property="isMerge"    column="is_merge"    />
+        <result property="isTransshipment"    column="is_transshipment"    />
+        <result property="containerId"    column="container_id"    />
+        <result property="remarks"    column="remarks"    />
+    </resultMap>
+
+    <sql id="selectTransportDemandVo">
+        select id, tenant_id, assignment_type, published_by, published_at, created_at, assigned_at, cargo_type, tonnage_demand, volume_demand, container_demand, vessel_id, mmsi_number, vessel_name, is_empty_vessel, tonnage_available, volume_available, container_available, is_return_trip_available, vessel_availability_start, vessel_availability_end, return_destination_port, return_destination_port_id, origin_port, origin_port_id, destination_port, destination_port_id, departure_start, departure_end, arrival_start, arrival_end, arrival_estimate, upload_time, unload_time, priority_setting, status, intermediate_ports, geo_path, intermediate_ports_id, cargo_property, is_merge, is_transshipment, container_id, remarks from dt_transport_demand
+    </sql>
+
+    <select id="selectTransportDemandList" parameterType="TransportDemand" resultMap="TransportDemandResult">
+<!--        <include refid="selectTransportDemandVo"/>-->
+
+        SELECT
+        t.*,
+        origin_city.name      AS originCity,
+        dest_city.name        AS destinationCity
+        FROM dt_transport_demand t
+        LEFT JOIN bgv_berth_info origin_berth
+        ON t.origin_port_id = origin_berth.isrs
+        LEFT JOIN nl_unlocode origin_city
+        ON origin_berth.unlocode = origin_city.locode
+        LEFT JOIN bgv_berth_info dest_berth
+        ON t.destination_port_id = dest_berth.isrs
+        LEFT JOIN nl_unlocode dest_city
+        ON dest_berth.unlocode = dest_city.locode
+
+        <where>
+            <if test="tenantId != null "> and tenant_id = #{tenantId}</if>
+            <if test="assignmentType != null  and assignmentType != ''"> and assignment_type = #{assignmentType}</if>
+            <if test="cargoType != null  and cargoType != ''"> and cargo_type like concat('%', #{cargoType}, '%')</if>
+            <if test="tonnageDemand != null "> and tonnage_demand &lt;= #{tonnageDemand}</if>
+            <if test="volumeDemand != null "> and volume_demand &lt;= #{volumeDemand}</if>
+            <if test="containerDemand != null  and containerDemand != ''"> and container_demand &lt;= #{containerDemand}</if>
+            <if test="vesselId != null "> and vessel_id = #{vesselId}</if>
+            <if test="mmsiNumber != null  and mmsiNumber != ''"> and mmsi_number = #{mmsiNumber}</if>
+            <if test="vesselName != null  and vesselName != ''"> and vessel_name like concat('%', #{vesselName}, '%')</if>
+            <if test="isEmptyVessel != null "> and is_empty_vessel = #{isEmptyVessel}</if>
+            <if test="tonnageAvailable != null "> and tonnage_available &gt;= #{tonnageAvailable}</if>
+            <if test="volumeAvailable != null "> and volume_available &gt;= #{volumeAvailable}</if>
+            <if test="containerAvailable != null  and containerAvailable != ''"> and container_available &gt;= #{containerAvailable}</if>
+            <if test="isReturnTripAvailable != null "> and is_return_trip_available = #{isReturnTripAvailable}</if>
+            <if test="vesselAvailabilityStart != null "> and vessel_availability_start &lt;= #{vesselAvailabilityStart}</if>
+            <if test="vesselAvailabilityEnd != null "> and vessel_availability_end &gt;= #{vesselAvailabilityEnd}</if>
+            <if test="returnDestinationPort != null  and returnDestinationPort != ''"> and return_destination_port like concat('%', #{returnDestinationPort}, '%')</if>
+            <if test="returnDestinationPortId != null  and returnDestinationPortId != ''"> and return_destination_port_id = #{returnDestinationPortId}</if>
+            <if test="originPort != null  and originPort != ''"> and origin_port like concat('%', #{originPort}, '%')</if>
+            <if test="originPortId != null  and originPortId != ''"> and origin_port_id = #{originPortId}</if>
+            <if test="destinationPort != null  and destinationPort != ''"> and destination_port like concat('%', #{destinationPort}, '%')</if>
+            <if test="destinationPortId != null  and destinationPortId != ''"> and destination_port_id = #{destinationPortId}</if>
+            <if test="departureStart != null "> and departure_start &lt;= #{departureStart}</if>
+            <if test="departureEnd != null "> and departure_end &gt;= #{departureEnd}</if>
+            <if test="arrivalStart != null "> and arrival_start &lt;= #{arrivalStart}</if>
+            <if test="arrivalEnd != null "> and arrival_end &gt;= #{arrivalEnd}</if>
+            <if test="params.beginArrivalEstimate != null and params.beginArrivalEstimate != '' and params.endArrivalEstimate != null and params.endArrivalEstimate != ''"> and arrival_estimate between #{params.beginArrivalEstimate} and #{params.endArrivalEstimate}</if>
+            <if test="params.beginUploadTime != null and params.beginUploadTime != '' and params.endUploadTime != null and params.endUploadTime != ''"> and upload_time between #{params.beginUploadTime} and #{params.endUploadTime}</if>
+            <if test="params.beginUnloadTime != null and params.beginUnloadTime != '' and params.endUnloadTime != null and params.endUnloadTime != ''"> and unload_time between #{params.beginUnloadTime} and #{params.endUnloadTime}</if>
+            <if test="prioritySetting != null  and prioritySetting != ''"> and priority_setting = #{prioritySetting}</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="intermediatePorts != null  and intermediatePorts != ''"> and intermediate_ports like concat('%', #{intermediatePorts}, '%')</if>
+            <if test="intermediatePortsId != null  and intermediatePortsId != ''"> and intermediate_ports_id = #{intermediatePortsId}</if>
+            <if test="isMerge != null "> and is_merge = #{isMerge}</if>
+            <if test="isTransshipment != null "> and is_transshipment = #{isTransshipment}</if>
+        </where>
+    </select>
+    
+    <select id="selectTransportDemandById" parameterType="Long" resultMap="TransportDemandResult">
+        <include refid="selectTransportDemandVo"/>
+        where id = #{id}
+    </select>
+
+<!--    <select id="selectPublishedVesselToCargoWithCities"-->
+<!--            parameterType="map"-->
+<!--            resultType="com.ruoyi.transport.domain.TransportDemandWithCity">-->
+<!--        SELECT-->
+<!--        t.*,-->
+<!--        origin_city.name  AS originCity,-->
+<!--        dest_city.name    AS destinationCity-->
+<!--        FROM dt_transport_demand t-->
+<!--                 LEFT JOIN bgv_berth_info origin_berth-->
+<!--                           ON t.origin_port_id = origin_berth.isrs-->
+<!--                 LEFT JOIN bgv_berth_info dest_berth-->
+<!--                           ON t.destination_port_id = dest_berth.isrs-->
+<!--                 LEFT JOIN nl_unlocode origin_city-->
+<!--                           ON origin_berth.unlocode = origin_city.locode-->
+<!--                 LEFT JOIN nl_unlocode dest_city-->
+<!--                           ON dest_berth.unlocode = dest_city.locode-->
+<!--        WHERE t.assignment_type = 'vessel_to_cargo'-->
+<!--        AND t.status = 'Published'-->
+<!--        <if test="originPortId != null and originPortId != ''">-->
+<!--            AND t.origin_port_id = #{originPortId}-->
+<!--        </if>-->
+<!--        <if test="originPort != null and originPort != ''">-->
+<!--            AND t.origin_port LIKE CONCAT('%', #{originPort}, '%')-->
+<!--        </if>-->
+<!--    </select>-->
+
+    <insert id="insertTransportDemand" parameterType="TransportDemand" useGeneratedKeys="true" keyProperty="id">
+        insert into dt_transport_demand
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="tenantId != null">tenant_id,</if>
+            <if test="assignmentType != null">assignment_type,</if>
+            <if test="publishedBy != null">published_by,</if>
+            <if test="publishedAt != null">published_at,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="assignedAt != null">assigned_at,</if>
+            <if test="cargoType != null">cargo_type,</if>
+            <if test="tonnageDemand != null">tonnage_demand,</if>
+            <if test="volumeDemand != null">volume_demand,</if>
+            <if test="containerDemand != null">container_demand,</if>
+            <if test="vesselId != null">vessel_id,</if>
+            <if test="mmsiNumber != null">mmsi_number,</if>
+            <if test="vesselName != null">vessel_name,</if>
+            <if test="isEmptyVessel != null">is_empty_vessel,</if>
+            <if test="tonnageAvailable != null">tonnage_available,</if>
+            <if test="volumeAvailable != null">volume_available,</if>
+            <if test="containerAvailable != null">container_available,</if>
+            <if test="isReturnTripAvailable != null">is_return_trip_available,</if>
+            <if test="vesselAvailabilityStart != null">vessel_availability_start,</if>
+            <if test="vesselAvailabilityEnd != null">vessel_availability_end,</if>
+            <if test="returnDestinationPort != null">return_destination_port,</if>
+            <if test="returnDestinationPortId != null">return_destination_port_id,</if>
+            <if test="originPort != null and originPort != ''">origin_port,</if>
+            <if test="originPortId != null">origin_port_id,</if>
+            <if test="destinationPort != null and destinationPort != ''">destination_port,</if>
+            <if test="destinationPortId != null">destination_port_id,</if>
+            <if test="departureStart != null">departure_start,</if>
+            <if test="departureEnd != null">departure_end,</if>
+            <if test="arrivalStart != null">arrival_start,</if>
+            <if test="arrivalEnd != null">arrival_end,</if>
+            <if test="arrivalEstimate != null">arrival_estimate,</if>
+            <if test="uploadTime != null">upload_time,</if>
+            <if test="unloadTime != null">unload_time,</if>
+            <if test="prioritySetting != null">priority_setting,</if>
+            <if test="status != null">status,</if>
+            <if test="intermediatePorts != null">intermediate_ports,</if>
+            <if test="geoPath != null">geo_path,</if>
+            <if test="intermediatePortsId != null">intermediate_ports_id,</if>
+            <if test="cargoProperty != null">cargo_property,</if>
+            <if test="isMerge != null">is_merge,</if>
+            <if test="isTransshipment != null">is_transshipment,</if>
+            <if test="containerId != null">container_id,</if>
+            <if test="remarks != null">remarks,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="tenantId != null">#{tenantId},</if>
+            <if test="assignmentType != null">#{assignmentType},</if>
+            <if test="publishedBy != null">#{publishedBy},</if>
+            <if test="publishedAt != null">#{publishedAt},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="assignedAt != null">#{assignedAt},</if>
+            <if test="cargoType != null">#{cargoType},</if>
+            <if test="tonnageDemand != null">#{tonnageDemand},</if>
+            <if test="volumeDemand != null">#{volumeDemand},</if>
+            <if test="containerDemand != null">#{containerDemand},</if>
+            <if test="vesselId != null">#{vesselId},</if>
+            <if test="mmsiNumber != null">#{mmsiNumber},</if>
+            <if test="vesselName != null">#{vesselName},</if>
+            <if test="isEmptyVessel != null">#{isEmptyVessel},</if>
+            <if test="tonnageAvailable != null">#{tonnageAvailable},</if>
+            <if test="volumeAvailable != null">#{volumeAvailable},</if>
+            <if test="containerAvailable != null">#{containerAvailable},</if>
+            <if test="isReturnTripAvailable != null">#{isReturnTripAvailable},</if>
+            <if test="vesselAvailabilityStart != null">#{vesselAvailabilityStart},</if>
+            <if test="vesselAvailabilityEnd != null">#{vesselAvailabilityEnd},</if>
+            <if test="returnDestinationPort != null">#{returnDestinationPort},</if>
+            <if test="returnDestinationPortId != null">#{returnDestinationPortId},</if>
+            <if test="originPort != null and originPort != ''">#{originPort},</if>
+            <if test="originPortId != null">#{originPortId},</if>
+            <if test="destinationPort != null and destinationPort != ''">#{destinationPort},</if>
+            <if test="destinationPortId != null">#{destinationPortId},</if>
+            <if test="departureStart != null">#{departureStart},</if>
+            <if test="departureEnd != null">#{departureEnd},</if>
+            <if test="arrivalStart != null">#{arrivalStart},</if>
+            <if test="arrivalEnd != null">#{arrivalEnd},</if>
+            <if test="arrivalEstimate != null">#{arrivalEstimate},</if>
+            <if test="uploadTime != null">#{uploadTime},</if>
+            <if test="unloadTime != null">#{unloadTime},</if>
+            <if test="prioritySetting != null">#{prioritySetting},</if>
+            <if test="status != null">#{status},</if>
+            <if test="intermediatePorts != null">#{intermediatePorts},</if>
+            <if test="geoPath != null">#{geoPath},</if>
+            <if test="intermediatePortsId != null">#{intermediatePortsId},</if>
+            <if test="cargoProperty != null">#{cargoProperty},</if>
+            <if test="isMerge != null">#{isMerge},</if>
+            <if test="isTransshipment != null">#{isTransshipment},</if>
+            <if test="containerId != null">#{containerId},</if>
+            <if test="remarks != null">#{remarks},</if>
+         </trim>
+    </insert>
+
+    <update id="updateTransportDemand" parameterType="TransportDemand">
+        update dt_transport_demand
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="tenantId != null">tenant_id = #{tenantId},</if>
+            <if test="assignmentType != null">assignment_type = #{assignmentType},</if>
+            <if test="publishedBy != null">published_by = #{publishedBy},</if>
+            <if test="publishedAt != null">published_at = #{publishedAt},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="assignedAt != null">assigned_at = #{assignedAt},</if>
+            <if test="cargoType != null">cargo_type = #{cargoType},</if>
+            <if test="tonnageDemand != null">tonnage_demand = #{tonnageDemand},</if>
+            <if test="volumeDemand != null">volume_demand = #{volumeDemand},</if>
+            <if test="containerDemand != null">container_demand = #{containerDemand},</if>
+            <if test="vesselId != null">vessel_id = #{vesselId},</if>
+            <if test="mmsiNumber != null">mmsi_number = #{mmsiNumber},</if>
+            <if test="vesselName != null">vessel_name = #{vesselName},</if>
+            <if test="isEmptyVessel != null">is_empty_vessel = #{isEmptyVessel},</if>
+            <if test="tonnageAvailable != null">tonnage_available = #{tonnageAvailable},</if>
+            <if test="volumeAvailable != null">volume_available = #{volumeAvailable},</if>
+            <if test="containerAvailable != null">container_available = #{containerAvailable},</if>
+            <if test="isReturnTripAvailable != null">is_return_trip_available = #{isReturnTripAvailable},</if>
+            <if test="vesselAvailabilityStart != null">vessel_availability_start = #{vesselAvailabilityStart},</if>
+            <if test="vesselAvailabilityEnd != null">vessel_availability_end = #{vesselAvailabilityEnd},</if>
+            <if test="returnDestinationPort != null">return_destination_port = #{returnDestinationPort},</if>
+            <if test="returnDestinationPortId != null">return_destination_port_id = #{returnDestinationPortId},</if>
+            <if test="originPort != null and originPort != ''">origin_port = #{originPort},</if>
+            <if test="originPortId != null">origin_port_id = #{originPortId},</if>
+            <if test="destinationPort != null and destinationPort != ''">destination_port = #{destinationPort},</if>
+            <if test="destinationPortId != null">destination_port_id = #{destinationPortId},</if>
+            <if test="departureStart != null">departure_start = #{departureStart},</if>
+            <if test="departureEnd != null">departure_end = #{departureEnd},</if>
+            <if test="arrivalStart != null">arrival_start = #{arrivalStart},</if>
+            <if test="arrivalEnd != null">arrival_end = #{arrivalEnd},</if>
+            <if test="arrivalEstimate != null">arrival_estimate = #{arrivalEstimate},</if>
+            <if test="uploadTime != null">upload_time = #{uploadTime},</if>
+            <if test="unloadTime != null">unload_time = #{unloadTime},</if>
+            <if test="prioritySetting != null">priority_setting = #{prioritySetting},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="intermediatePorts != null">intermediate_ports = #{intermediatePorts},</if>
+            <if test="geoPath != null">geo_path = #{geoPath},</if>
+            <if test="intermediatePortsId != null">intermediate_ports_id = #{intermediatePortsId},</if>
+            <if test="cargoProperty != null">cargo_property = #{cargoProperty},</if>
+            <if test="isMerge != null">is_merge = #{isMerge},</if>
+            <if test="isTransshipment != null">is_transshipment = #{isTransshipment},</if>
+            <if test="containerId != null">container_id = #{containerId},</if>
+            <if test="remarks != null">remarks = #{remarks},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteTransportDemandById" parameterType="Long">
+        delete from dt_transport_demand where id = #{id}
+    </delete>
+
+    <delete id="deleteTransportDemandByIds" parameterType="String">
+        delete from dt_transport_demand where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

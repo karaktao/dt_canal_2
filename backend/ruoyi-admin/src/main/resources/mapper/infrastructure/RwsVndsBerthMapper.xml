@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.infra.mapper.RwsVndsBerthMapper">
+    
+    <resultMap type="RwsVndsBerth" id="RwsVndsBerthResult">
+        <result property="Id"    column="Id"    />
+        <result property="GeoType"    column="GeoType"    />
+        <result property="GeoGeneration"    column="GeoGeneration"    />
+        <result property="GeoJSON"    column="GeoJSON"    />
+        <result property="Name"    column="Name"    />
+        <result property="Geometry"    column="Geometry"    />
+        <result property="VinCode"    column="VinCode"    />
+        <result property="UnLocationCode"    column="UnLocationCode"    />
+        <result property="Note"    column="Note"    />
+        <result property="RouteId"    column="RouteId"    />
+        <result property="RouteKmBegin"    column="RouteKmBegin"    />
+        <result property="RouteKmEnd"    column="RouteKmEnd"    />
+        <result property="City"    column="City"    />
+        <result property="AdministrationId"    column="AdministrationId"    />
+        <result property="FairwaySectionId"    column="FairwaySectionId"    />
+        <result property="FairwayId"    column="FairwayId"    />
+        <result property="IsrsId"    column="IsrsId"    />
+        <result property="Condition"    column="Condition"    />
+        <result property="Category"    column="Category"    />
+        <result property="WidthPosition"    column="WidthPosition"    />
+        <result property="HasCrane"    column="HasCrane"    />
+        <result property="TerminalId"    column="TerminalId"    />
+        <result property="Address"    column="Address"    />
+        <result property="Community"    column="Community"    />
+        <result property="Accessibility"    column="Accessibility"    />
+        <result property="AvailableHeight"    column="AvailableHeight"    />
+        <result property="AvailableLength"    column="AvailableLength"    />
+        <result property="AvailableWidth"    column="AvailableWidth"    />
+        <result property="ConstructionMaterial"    column="ConstructionMaterial"    />
+        <result property="ForeignCode"    column="ForeignCode"    />
+        <result property="Length"    column="Length"    />
+        <result property="MaximalShipLength"    column="MaximalShipLength"    />
+        <result property="MaximumConvoyHeight"    column="MaximumConvoyHeight"    />
+        <result property="MaximumConvoyLength"    column="MaximumConvoyLength"    />
+        <result property="MaximumConvoyWidth"    column="MaximumConvoyWidth"    />
+        <result property="MaximumDraught"    column="MaximumDraught"    />
+        <result property="MaximumShipHeight"    column="MaximumShipHeight"    />
+        <result property="MaximumShipWidth"    column="MaximumShipWidth"    />
+        <result property="MaximumStayDurationH"    column="MaximumStayDurationH"    />
+        <result property="MinimalShipLength"    column="MinimalShipLength"    />
+        <result property="MooringFacilitiesDesc"    column="MooringFacilitiesDesc"    />
+        <result property="NumberOfMooringFacilities"    column="NumberOfMooringFacilities"    />
+        <result property="NumberOfRows"    column="NumberOfRows"    />
+        <result property="PortAreaId"    column="PortAreaId"    />
+        <result property="QuayQuality"    column="QuayQuality"    />
+        <result property="Rotation"    column="Rotation"    />
+        <result property="ShorelineCategory"    column="ShorelineCategory"    />
+        <result property="Signaling"    column="Signaling"    />
+        <result property="Signalling"    column="Signalling"    />
+        <result property="TransportPossibilitiesDesc"    column="TransportPossibilitiesDesc"    />
+        <result property="UsageConditions"    column="UsageConditions"    />
+        <result property="Width"    column="Width"    />
+        <result property="Facility"    column="Facility"    />
+        <result property="ShipCategories"    column="ShipCategories"    />
+        <result property="Status"    column="Status"    />
+        <result property="TransshipmentGoods"    column="TransshipmentGoods"    />
+    </resultMap>
+
+    <sql id="selectRwsVndsBerthVo">
+        select Id, GeoType, GeoGeneration, GeoJSON, Name, Geometry, VinCode, UnLocationCode, Note,
+               RouteId, RouteKmBegin, RouteKmEnd, City, AdministrationId, FairwaySectionId,
+               FairwayId, IsrsId,
+               `Condition`, `Category`, WidthPosition, HasCrane, TerminalId,
+               `Address`, `Community`, Accessibility, AvailableHeight, AvailableLength, AvailableWidth,
+               ConstructionMaterial, ForeignCode, Length, MaximalShipLength, MaximumConvoyHeight,
+               MaximumConvoyLength, MaximumConvoyWidth, MaximumDraught, MaximumShipHeight,
+               MaximumShipWidth, MaximumStayDurationH, MinimalShipLength, MooringFacilitiesDesc,
+               NumberOfMooringFacilities, NumberOfRows, PortAreaId, QuayQuality, Rotation,
+               ShorelineCategory, Signaling, Signalling, TransportPossibilitiesDesc,
+               UsageConditions, Width, Facility, ShipCategories, `Status`, TransshipmentGoods from rws_VNDS_berth
+    </sql>
+
+    <select id="selectRwsVndsBerthList" parameterType="RwsVndsBerth" resultMap="RwsVndsBerthResult">
+        <include refid="selectRwsVndsBerthVo"/>
+        <where>  
+            <if test="GeoType != null  and GeoType != ''"> and GeoType = #{GeoType}</if>
+            <if test="GeoGeneration != null "> and GeoGeneration = #{GeoGeneration}</if>
+            <if test="GeoJSON != null  and GeoJSON != ''"> and GeoJSON = #{GeoJSON}</if>
+            <if test="Name != null  and Name != ''"> and Name like concat('%', #{Name}, '%')</if>
+            <if test="Geometry != null  and Geometry != ''"> and Geometry = #{Geometry}</if>
+            <if test="VinCode != null  and VinCode != ''"> and VinCode = #{VinCode}</if>
+            <if test="UnLocationCode != null  and UnLocationCode != ''"> and UnLocationCode = #{UnLocationCode}</if>
+            <if test="Note != null  and Note != ''"> and Note = #{Note}</if>
+            <if test="RouteId != null "> and RouteId = #{RouteId}</if>
+            <if test="RouteKmBegin != null "> and RouteKmBegin = #{RouteKmBegin}</if>
+            <if test="RouteKmEnd != null "> and RouteKmEnd = #{RouteKmEnd}</if>
+            <if test="City != null  and City != ''"> and City = #{City}</if>
+            <if test="AdministrationId != null "> and AdministrationId = #{AdministrationId}</if>
+            <if test="FairwaySectionId != null "> and FairwaySectionId = #{FairwaySectionId}</if>
+            <if test="FairwayId != null "> and FairwayId = #{FairwayId}</if>
+            <if test="IsrsId != null "> and IsrsId = #{IsrsId}</if>
+            <if test="Condition != null  and Condition != ''"> and Condition = #{Condition}</if>
+            <if test="Category != null  and Category != ''"> and Category = #{Category}</if>
+            <if test="WidthPosition != null  and WidthPosition != ''"> and WidthPosition = #{WidthPosition}</if>
+            <if test="HasCrane != null "> and HasCrane = #{HasCrane}</if>
+            <if test="TerminalId != null "> and TerminalId = #{TerminalId}</if>
+            <if test="Address != null  and Address != ''"> and Address = #{Address}</if>
+            <if test="Community != null  and Community != ''"> and Community = #{Community}</if>
+            <if test="Accessibility != null  and Accessibility != ''"> and Accessibility = #{Accessibility}</if>
+            <if test="AvailableHeight != null "> and AvailableHeight = #{AvailableHeight}</if>
+            <if test="AvailableLength != null "> and AvailableLength = #{AvailableLength}</if>
+            <if test="AvailableWidth != null "> and AvailableWidth = #{AvailableWidth}</if>
+            <if test="ConstructionMaterial != null  and ConstructionMaterial != ''"> and ConstructionMaterial = #{ConstructionMaterial}</if>
+            <if test="ForeignCode != null  and ForeignCode != ''"> and ForeignCode = #{ForeignCode}</if>
+            <if test="Length != null "> and Length = #{Length}</if>
+            <if test="MaximalShipLength != null "> and MaximalShipLength = #{MaximalShipLength}</if>
+            <if test="MaximumConvoyHeight != null "> and MaximumConvoyHeight = #{MaximumConvoyHeight}</if>
+            <if test="MaximumConvoyLength != null "> and MaximumConvoyLength = #{MaximumConvoyLength}</if>
+            <if test="MaximumConvoyWidth != null "> and MaximumConvoyWidth = #{MaximumConvoyWidth}</if>
+            <if test="MaximumDraught != null "> and MaximumDraught = #{MaximumDraught}</if>
+            <if test="MaximumShipHeight != null "> and MaximumShipHeight = #{MaximumShipHeight}</if>
+            <if test="MaximumShipWidth != null "> and MaximumShipWidth = #{MaximumShipWidth}</if>
+            <if test="MaximumStayDurationH != null "> and MaximumStayDurationH = #{MaximumStayDurationH}</if>
+            <if test="MinimalShipLength != null "> and MinimalShipLength = #{MinimalShipLength}</if>
+            <if test="MooringFacilitiesDesc != null  and MooringFacilitiesDesc != ''"> and MooringFacilitiesDesc = #{MooringFacilitiesDesc}</if>
+            <if test="NumberOfMooringFacilities != null "> and NumberOfMooringFacilities = #{NumberOfMooringFacilities}</if>
+            <if test="NumberOfRows != null "> and NumberOfRows = #{NumberOfRows}</if>
+            <if test="PortAreaId != null "> and PortAreaId = #{PortAreaId}</if>
+            <if test="QuayQuality != null  and QuayQuality != ''"> and QuayQuality = #{QuayQuality}</if>
+            <if test="Rotation != null "> and Rotation = #{Rotation}</if>
+            <if test="ShorelineCategory != null  and ShorelineCategory != ''"> and ShorelineCategory = #{ShorelineCategory}</if>
+            <if test="Signaling != null  and Signaling != ''"> and Signaling = #{Signaling}</if>
+            <if test="Signalling != null  and Signalling != ''"> and Signalling = #{Signalling}</if>
+            <if test="TransportPossibilitiesDesc != null  and TransportPossibilitiesDesc != ''"> and TransportPossibilitiesDesc = #{TransportPossibilitiesDesc}</if>
+            <if test="UsageConditions != null  and UsageConditions != ''"> and UsageConditions = #{UsageConditions}</if>
+            <if test="Width != null "> and Width = #{Width}</if>
+            <if test="Facility != null  and Facility != ''"> and Facility = #{Facility}</if>
+            <if test="ShipCategories != null  and ShipCategories != ''"> and ShipCategories = #{ShipCategories}</if>
+            <if test="Status != null  and Status != ''"> and Status = #{Status}</if>
+            <if test="TransshipmentGoods != null  and TransshipmentGoods != ''"> and TransshipmentGoods = #{TransshipmentGoods}</if>
+        </where>
+    </select>
+    
+    <select id="selectRwsVndsBerthById" parameterType="Long" resultMap="RwsVndsBerthResult">
+        <include refid="selectRwsVndsBerthVo"/>
+        where Id = #{Id}
+    </select>
+
+    <insert id="insertRwsVndsBerth" parameterType="RwsVndsBerth">
+        insert into rws_VNDS_berth
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="Id != null">Id,</if>
+            <if test="GeoType != null">GeoType,</if>
+            <if test="GeoGeneration != null">GeoGeneration,</if>
+            <if test="GeoJSON != null">GeoJSON,</if>
+            <if test="Name != null">Name,</if>
+            <if test="Geometry != null">Geometry,</if>
+            <if test="VinCode != null">VinCode,</if>
+            <if test="UnLocationCode != null">UnLocationCode,</if>
+            <if test="Note != null">Note,</if>
+            <if test="RouteId != null">RouteId,</if>
+            <if test="RouteKmBegin != null">RouteKmBegin,</if>
+            <if test="RouteKmEnd != null">RouteKmEnd,</if>
+            <if test="City != null">City,</if>
+            <if test="AdministrationId != null">AdministrationId,</if>
+            <if test="FairwaySectionId != null">FairwaySectionId,</if>
+            <if test="FairwayId != null">FairwayId,</if>
+            <if test="IsrsId != null">IsrsId,</if>
+            <if test="Condition != null">Condition,</if>
+            <if test="Category != null">Category,</if>
+            <if test="WidthPosition != null">WidthPosition,</if>
+            <if test="HasCrane != null">HasCrane,</if>
+            <if test="TerminalId != null">TerminalId,</if>
+            <if test="Address != null">Address,</if>
+            <if test="Community != null">Community,</if>
+            <if test="Accessibility != null">Accessibility,</if>
+            <if test="AvailableHeight != null">AvailableHeight,</if>
+            <if test="AvailableLength != null">AvailableLength,</if>
+            <if test="AvailableWidth != null">AvailableWidth,</if>
+            <if test="ConstructionMaterial != null">ConstructionMaterial,</if>
+            <if test="ForeignCode != null">ForeignCode,</if>
+            <if test="Length != null">Length,</if>
+            <if test="MaximalShipLength != null">MaximalShipLength,</if>
+            <if test="MaximumConvoyHeight != null">MaximumConvoyHeight,</if>
+            <if test="MaximumConvoyLength != null">MaximumConvoyLength,</if>
+            <if test="MaximumConvoyWidth != null">MaximumConvoyWidth,</if>
+            <if test="MaximumDraught != null">MaximumDraught,</if>
+            <if test="MaximumShipHeight != null">MaximumShipHeight,</if>
+            <if test="MaximumShipWidth != null">MaximumShipWidth,</if>
+            <if test="MaximumStayDurationH != null">MaximumStayDurationH,</if>
+            <if test="MinimalShipLength != null">MinimalShipLength,</if>
+            <if test="MooringFacilitiesDesc != null">MooringFacilitiesDesc,</if>
+            <if test="NumberOfMooringFacilities != null">NumberOfMooringFacilities,</if>
+            <if test="NumberOfRows != null">NumberOfRows,</if>
+            <if test="PortAreaId != null">PortAreaId,</if>
+            <if test="QuayQuality != null">QuayQuality,</if>
+            <if test="Rotation != null">Rotation,</if>
+            <if test="ShorelineCategory != null">ShorelineCategory,</if>
+            <if test="Signaling != null">Signaling,</if>
+            <if test="Signalling != null">Signalling,</if>
+            <if test="TransportPossibilitiesDesc != null">TransportPossibilitiesDesc,</if>
+            <if test="UsageConditions != null">UsageConditions,</if>
+            <if test="Width != null">Width,</if>
+            <if test="Facility != null">Facility,</if>
+            <if test="ShipCategories != null">ShipCategories,</if>
+            <if test="Status != null">Status,</if>
+            <if test="TransshipmentGoods != null">TransshipmentGoods,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="Id != null">#{Id},</if>
+            <if test="GeoType != null">#{GeoType},</if>
+            <if test="GeoGeneration != null">#{GeoGeneration},</if>
+            <if test="GeoJSON != null">#{GeoJSON},</if>
+            <if test="Name != null">#{Name},</if>
+            <if test="Geometry != null">#{Geometry},</if>
+            <if test="VinCode != null">#{VinCode},</if>
+            <if test="UnLocationCode != null">#{UnLocationCode},</if>
+            <if test="Note != null">#{Note},</if>
+            <if test="RouteId != null">#{RouteId},</if>
+            <if test="RouteKmBegin != null">#{RouteKmBegin},</if>
+            <if test="RouteKmEnd != null">#{RouteKmEnd},</if>
+            <if test="City != null">#{City},</if>
+            <if test="AdministrationId != null">#{AdministrationId},</if>
+            <if test="FairwaySectionId != null">#{FairwaySectionId},</if>
+            <if test="FairwayId != null">#{FairwayId},</if>
+            <if test="IsrsId != null">#{IsrsId},</if>
+            <if test="Condition != null">#{Condition},</if>
+            <if test="Category != null">#{Category},</if>
+            <if test="WidthPosition != null">#{WidthPosition},</if>
+            <if test="HasCrane != null">#{HasCrane},</if>
+            <if test="TerminalId != null">#{TerminalId},</if>
+            <if test="Address != null">#{Address},</if>
+            <if test="Community != null">#{Community},</if>
+            <if test="Accessibility != null">#{Accessibility},</if>
+            <if test="AvailableHeight != null">#{AvailableHeight},</if>
+            <if test="AvailableLength != null">#{AvailableLength},</if>
+            <if test="AvailableWidth != null">#{AvailableWidth},</if>
+            <if test="ConstructionMaterial != null">#{ConstructionMaterial},</if>
+            <if test="ForeignCode != null">#{ForeignCode},</if>
+            <if test="Length != null">#{Length},</if>
+            <if test="MaximalShipLength != null">#{MaximalShipLength},</if>
+            <if test="MaximumConvoyHeight != null">#{MaximumConvoyHeight},</if>
+            <if test="MaximumConvoyLength != null">#{MaximumConvoyLength},</if>
+            <if test="MaximumConvoyWidth != null">#{MaximumConvoyWidth},</if>
+            <if test="MaximumDraught != null">#{MaximumDraught},</if>
+            <if test="MaximumShipHeight != null">#{MaximumShipHeight},</if>
+            <if test="MaximumShipWidth != null">#{MaximumShipWidth},</if>
+            <if test="MaximumStayDurationH != null">#{MaximumStayDurationH},</if>
+            <if test="MinimalShipLength != null">#{MinimalShipLength},</if>
+            <if test="MooringFacilitiesDesc != null">#{MooringFacilitiesDesc},</if>
+            <if test="NumberOfMooringFacilities != null">#{NumberOfMooringFacilities},</if>
+            <if test="NumberOfRows != null">#{NumberOfRows},</if>
+            <if test="PortAreaId != null">#{PortAreaId},</if>
+            <if test="QuayQuality != null">#{QuayQuality},</if>
+            <if test="Rotation != null">#{Rotation},</if>
+            <if test="ShorelineCategory != null">#{ShorelineCategory},</if>
+            <if test="Signaling != null">#{Signaling},</if>
+            <if test="Signalling != null">#{Signalling},</if>
+            <if test="TransportPossibilitiesDesc != null">#{TransportPossibilitiesDesc},</if>
+            <if test="UsageConditions != null">#{UsageConditions},</if>
+            <if test="Width != null">#{Width},</if>
+            <if test="Facility != null">#{Facility},</if>
+            <if test="ShipCategories != null">#{ShipCategories},</if>
+            <if test="Status != null">#{Status},</if>
+            <if test="TransshipmentGoods != null">#{TransshipmentGoods},</if>
+         </trim>
+    </insert>
+
+    <update id="updateRwsVndsBerth" parameterType="RwsVndsBerth">
+        update rws_VNDS_berth
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="GeoType != null">GeoType = #{GeoType},</if>
+            <if test="GeoGeneration != null">GeoGeneration = #{GeoGeneration},</if>
+            <if test="GeoJSON != null">GeoJSON = #{GeoJSON},</if>
+            <if test="Name != null">Name = #{Name},</if>
+            <if test="Geometry != null">Geometry = #{Geometry},</if>
+            <if test="VinCode != null">VinCode = #{VinCode},</if>
+            <if test="UnLocationCode != null">UnLocationCode = #{UnLocationCode},</if>
+            <if test="Note != null">Note = #{Note},</if>
+            <if test="RouteId != null">RouteId = #{RouteId},</if>
+            <if test="RouteKmBegin != null">RouteKmBegin = #{RouteKmBegin},</if>
+            <if test="RouteKmEnd != null">RouteKmEnd = #{RouteKmEnd},</if>
+            <if test="City != null">City = #{City},</if>
+            <if test="AdministrationId != null">AdministrationId = #{AdministrationId},</if>
+            <if test="FairwaySectionId != null">FairwaySectionId = #{FairwaySectionId},</if>
+            <if test="FairwayId != null">FairwayId = #{FairwayId},</if>
+            <if test="IsrsId != null">IsrsId = #{IsrsId},</if>
+            <if test="Condition != null">Condition = #{Condition},</if>
+            <if test="Category != null">Category = #{Category},</if>
+            <if test="WidthPosition != null">WidthPosition = #{WidthPosition},</if>
+            <if test="HasCrane != null">HasCrane = #{HasCrane},</if>
+            <if test="TerminalId != null">TerminalId = #{TerminalId},</if>
+            <if test="Address != null">Address = #{Address},</if>
+            <if test="Community != null">Community = #{Community},</if>
+            <if test="Accessibility != null">Accessibility = #{Accessibility},</if>
+            <if test="AvailableHeight != null">AvailableHeight = #{AvailableHeight},</if>
+            <if test="AvailableLength != null">AvailableLength = #{AvailableLength},</if>
+            <if test="AvailableWidth != null">AvailableWidth = #{AvailableWidth},</if>
+            <if test="ConstructionMaterial != null">ConstructionMaterial = #{ConstructionMaterial},</if>
+            <if test="ForeignCode != null">ForeignCode = #{ForeignCode},</if>
+            <if test="Length != null">Length = #{Length},</if>
+            <if test="MaximalShipLength != null">MaximalShipLength = #{MaximalShipLength},</if>
+            <if test="MaximumConvoyHeight != null">MaximumConvoyHeight = #{MaximumConvoyHeight},</if>
+            <if test="MaximumConvoyLength != null">MaximumConvoyLength = #{MaximumConvoyLength},</if>
+            <if test="MaximumConvoyWidth != null">MaximumConvoyWidth = #{MaximumConvoyWidth},</if>
+            <if test="MaximumDraught != null">MaximumDraught = #{MaximumDraught},</if>
+            <if test="MaximumShipHeight != null">MaximumShipHeight = #{MaximumShipHeight},</if>
+            <if test="MaximumShipWidth != null">MaximumShipWidth = #{MaximumShipWidth},</if>
+            <if test="MaximumStayDurationH != null">MaximumStayDurationH = #{MaximumStayDurationH},</if>
+            <if test="MinimalShipLength != null">MinimalShipLength = #{MinimalShipLength},</if>
+            <if test="MooringFacilitiesDesc != null">MooringFacilitiesDesc = #{MooringFacilitiesDesc},</if>
+            <if test="NumberOfMooringFacilities != null">NumberOfMooringFacilities = #{NumberOfMooringFacilities},</if>
+            <if test="NumberOfRows != null">NumberOfRows = #{NumberOfRows},</if>
+            <if test="PortAreaId != null">PortAreaId = #{PortAreaId},</if>
+            <if test="QuayQuality != null">QuayQuality = #{QuayQuality},</if>
+            <if test="Rotation != null">Rotation = #{Rotation},</if>
+            <if test="ShorelineCategory != null">ShorelineCategory = #{ShorelineCategory},</if>
+            <if test="Signaling != null">Signaling = #{Signaling},</if>
+            <if test="Signalling != null">Signalling = #{Signalling},</if>
+            <if test="TransportPossibilitiesDesc != null">TransportPossibilitiesDesc = #{TransportPossibilitiesDesc},</if>
+            <if test="UsageConditions != null">UsageConditions = #{UsageConditions},</if>
+            <if test="Width != null">Width = #{Width},</if>
+            <if test="Facility != null">Facility = #{Facility},</if>
+            <if test="ShipCategories != null">ShipCategories = #{ShipCategories},</if>
+            <if test="Status != null">Status = #{Status},</if>
+            <if test="TransshipmentGoods != null">TransshipmentGoods = #{TransshipmentGoods},</if>
+        </trim>
+        where Id = #{Id}
+    </update>
+
+    <delete id="deleteRwsVndsBerthById" parameterType="Long">
+        delete from rws_VNDS_berth where Id = #{Id}
+    </delete>
+
+    <delete id="deleteRwsVndsBerthByIds" parameterType="String">
+        delete from rws_VNDS_berth where Id in 
+        <foreach item="Id" collection="array" open="(" separator="," close=")">
+            #{Id}
+        </foreach>
+    </delete>
+</mapper>

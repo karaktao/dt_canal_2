@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.weather.mapper.MeteoWeatherCodeDictMapper.MeteoWeatherUnitMapper">
+    
+    <resultMap type="MeteoWeatherUnit" id="MeteoWeatherUnitResult">
+        <result property="id"    column="id"    />
+        <result property="category"    column="category"    />
+        <result property="field"    column="field"    />
+        <result property="unit"    column="unit"    />
+    </resultMap>
+
+    <sql id="selectMeteoWeatherUnitVo">
+        select id, category, field, unit from meteo_weather_unit
+    </sql>
+
+    <select id="selectMeteoWeatherUnitList" parameterType="MeteoWeatherUnit" resultMap="MeteoWeatherUnitResult">
+        <include refid="selectMeteoWeatherUnitVo"/>
+        <where>  
+            <if test="category != null  and category != ''"> and category = #{category}</if>
+            <if test="field != null  and field != ''"> and field = #{field}</if>
+            <if test="unit != null  and unit != ''"> and unit = #{unit}</if>
+        </where>
+    </select>
+    
+    <select id="selectMeteoWeatherUnitById" parameterType="Long" resultMap="MeteoWeatherUnitResult">
+        <include refid="selectMeteoWeatherUnitVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertMeteoWeatherUnit" parameterType="MeteoWeatherUnit" useGeneratedKeys="true" keyProperty="id">
+        insert into meteo_weather_unit
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="category != null and category != ''">category,</if>
+            <if test="field != null and field != ''">field,</if>
+            <if test="unit != null and unit != ''">unit,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="category != null and category != ''">#{category},</if>
+            <if test="field != null and field != ''">#{field},</if>
+            <if test="unit != null and unit != ''">#{unit},</if>
+         </trim>
+    </insert>
+
+    <update id="updateMeteoWeatherUnit" parameterType="MeteoWeatherUnit">
+        update meteo_weather_unit
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="category != null and category != ''">category = #{category},</if>
+            <if test="field != null and field != ''">field = #{field},</if>
+            <if test="unit != null and unit != ''">unit = #{unit},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteMeteoWeatherUnitById" parameterType="Long">
+        delete from meteo_weather_unit where id = #{id}
+    </delete>
+
+    <delete id="deleteMeteoWeatherUnitByIds" parameterType="String">
+        delete from meteo_weather_unit where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

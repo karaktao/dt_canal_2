@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.infra.mapper.BridgeInfoMapper">
+    
+    <resultMap type="BridgeInfo" id="BridgeInfoResult">
+        <result property="id"    column="id"    />
+        <result property="name"    column="name"    />
+        <result property="isrs"    column="isrs"    />
+        <result property="originator"    column="originator"    />
+        <result property="latitude"    column="latitude"    />
+        <result property="longitude"    column="longitude"    />
+        <result property="lastModification"    column="last_modification"    />
+        <result property="createdAt"    column="created_at"    />
+        <result property="updatedAt"    column="updated_at"    />
+    </resultMap>
+
+    <sql id="selectBridgeInfoVo">
+        select id, name, isrs, originator, latitude, longitude, last_modification, created_at, updated_at from bgv_bridge_info
+    </sql>
+
+    <select id="selectBridgeInfoList" parameterType="BridgeInfo" resultMap="BridgeInfoResult">
+        <include refid="selectBridgeInfoVo"/>
+        <where>  
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="isrs != null  and isrs != ''"> and isrs = #{isrs}</if>
+        </where>
+    </select>
+    
+    <select id="selectBridgeInfoById" parameterType="Long" resultMap="BridgeInfoResult">
+        <include refid="selectBridgeInfoVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertBridgeInfo" parameterType="BridgeInfo" useGeneratedKeys="true" keyProperty="id">
+        insert into bgv_bridge_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null">name,</if>
+            <if test="isrs != null">isrs,</if>
+            <if test="originator != null">originator,</if>
+            <if test="latitude != null">latitude,</if>
+            <if test="longitude != null">longitude,</if>
+            <if test="lastModification != null">last_modification,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="updatedAt != null">updated_at,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="name != null">#{name},</if>
+            <if test="isrs != null">#{isrs},</if>
+            <if test="originator != null">#{originator},</if>
+            <if test="latitude != null">#{latitude},</if>
+            <if test="longitude != null">#{longitude},</if>
+            <if test="lastModification != null">#{lastModification},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="updatedAt != null">#{updatedAt},</if>
+         </trim>
+    </insert>
+
+    <update id="updateBridgeInfo" parameterType="BridgeInfo">
+        update bgv_bridge_info
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null">name = #{name},</if>
+            <if test="isrs != null">isrs = #{isrs},</if>
+            <if test="originator != null">originator = #{originator},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="lastModification != null">last_modification = #{lastModification},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteBridgeInfoById" parameterType="Long">
+        delete from bgv_bridge_info where id = #{id}
+    </delete>
+
+    <delete id="deleteBridgeInfoByIds" parameterType="String">
+        delete from bgv_bridge_info where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

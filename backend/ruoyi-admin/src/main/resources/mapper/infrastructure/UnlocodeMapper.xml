@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.infra.mapper.UnlocodeMapper">
+    
+    <resultMap type="Unlocode" id="UnlocodeResult">
+        <result property="locode"    column="locode"    />
+        <result property="name"    column="name"    />
+        <result property="nameWoDiacritics"    column="name_wo_diacritics"    />
+    </resultMap>
+
+    <sql id="selectUnlocodeVo">
+        select locode, name, name_wo_diacritics from nl_unlocode
+    </sql>
+
+    <select id="selectUnlocodeList" parameterType="Unlocode" resultMap="UnlocodeResult">
+        <include refid="selectUnlocodeVo"/>
+        <where>  
+            <if test="locode != null  and locode != ''"> and locode = #{locode}</if>
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="nameWoDiacritics != null  and nameWoDiacritics != ''"> and name_wo_diacritics like concat('%', #{nameWoDiacritics}, '%')</if>
+        </where>
+    </select>
+    
+    <select id="selectUnlocodeByLocode" parameterType="String" resultMap="UnlocodeResult">
+        <include refid="selectUnlocodeVo"/>
+        where locode = #{locode}
+    </select>
+
+    <insert id="insertUnlocode" parameterType="Unlocode">
+        insert into nl_unlocode
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="locode != null">locode,</if>
+            <if test="name != null">name,</if>
+            <if test="nameWoDiacritics != null">name_wo_diacritics,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="locode != null">#{locode},</if>
+            <if test="name != null">#{name},</if>
+            <if test="nameWoDiacritics != null">#{nameWoDiacritics},</if>
+         </trim>
+    </insert>
+
+    <update id="updateUnlocode" parameterType="Unlocode">
+        update nl_unlocode
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null">name = #{name},</if>
+            <if test="nameWoDiacritics != null">name_wo_diacritics = #{nameWoDiacritics},</if>
+        </trim>
+        where locode = #{locode}
+    </update>
+
+    <delete id="deleteUnlocodeByLocode" parameterType="String">
+        delete from nl_unlocode where locode = #{locode}
+    </delete>
+
+    <delete id="deleteUnlocodeByLocodes" parameterType="String">
+        delete from nl_unlocode where locode in 
+        <foreach item="locode" collection="array" open="(" separator="," close=")">
+            #{locode}
+        </foreach>
+    </delete>
+</mapper>
