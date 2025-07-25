@@ -41,7 +41,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectRwsVndsLockVo">
-        select Id, GeoGeneration, GeoType, Geometry, Name, FairwayId, FairwaySectionId, RouteId, RouteKmBegin, RouteKmEnd, VoyagePlanningPoint, Address, AdministrationId, City, Condition, ForeignCode, IsRemoteControlled, IsrsId, Length, MaximumRise, Note, NumberOfChambers, OperatingTimesId, PhoneNumber, PostalCode, ReferenceLevelBeBu, ReferenceLevelBoBi, RelatedBuildingComplexName, Rotation, VinCode, Width, CreatedAt, GeoJSON from rws_VNDS_lock
+        select Id, GeoGeneration, GeoType, Geometry, Name, FairwayId, FairwaySectionId, RouteId, RouteKmBegin, RouteKmEnd, VoyagePlanningPoint, Address, AdministrationId, City, `Condition`, `ForeignCode`, `IsRemoteControlled`, `IsrsId`, `Length`, `MaximumRise`, `Note`, NumberOfChambers, OperatingTimesId, PhoneNumber, PostalCode, ReferenceLevelBeBu, ReferenceLevelBoBi, RelatedBuildingComplexName, Rotation, VinCode, Width, CreatedAt, GeoJSON from rws_VNDS_lock
     </sql>
 
     <select id="selectRwsVndsLockList" parameterType="RwsVndsLock" resultMap="RwsVndsLockResult">

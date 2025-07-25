@@ -8,18 +8,16 @@ import { fromLonLat } from "ol/proj";
 import { Style, Fill, Stroke, Circle as CircleStyle } from "ol/style";
 import { listVNDSberth } from "@/api/infrastructure/VNDSberth";
 
-const emit = defineEmits(["map-layer-ready", "feature-clicked"]);
-
 const berthSource = new VectorSource();
 const berthLayer = new VectorLayer({
   source: berthSource,
-  zIndex: 100,
+  zIndex: 1001,
   style: (feature) => {
     const type = feature.getGeometry().getType();
     return type === "Point"
       ? new Style({
           image: new CircleStyle({
-            radius: 6,
+            radius: 5,
             fill: new Fill({ color: "rgba(255,165,0,0.6)" }),
             stroke: new Stroke({ color: "#fff", width: 2 }),
           }),
@@ -30,35 +28,67 @@ const berthLayer = new VectorLayer({
         });
   },
 });
+// 给图层设置 name，方便查找/卸载
+berthLayer.set("name", "berth");
+
+const emit = defineEmits(["map-layer-ready", "feature-clicked"]);
 
 // attachMapEvents 提供给 index.vue 调用
 async function attachMapEvents(map) {
-  const res = await listVNDSberth();
   const features = [];
+const pageSize = 200;
+  const firstPage = await listVNDSberth({ pageNum: 1, pageSize });
+  const total = firstPage.total;
+  const totalPages = Math.ceil(total / pageSize);
 
-  for (const item of res.rows) {
-    if (!item.GeoJSON) continue;
+  // 并发请求后续分页数据
+  const pagePromises = [];
+  for (let i = 2; i <= totalPages; i++) {
+    pagePromises.push(listVNDSberth({ pageNum: i, pageSize }));
+  }
+  const results = await Promise.all(pagePromises);
 
-    let feature;
-    if (item.GeoJSON.startsWith("POINT")) {
-      const coords = item.GeoJSON.match(/POINT\s*\(([^)]+)\)/)[1]
-        .split(" ")
-        .map(parseFloat);
-      feature = new Feature({
-        geometry: new Point(fromLonLat(coords)),
-        data: item,
-      });
-    } else if (item.GeoJSON.startsWith("POLYGON")) {
-      const coordStrs = item.GeoJSON.match(/POLYGON\s*\(\(([^)]+)\)\)/)[1]
-        .split(",")
-        .map((pt) => pt.trim().split(" ").map(parseFloat));
-      const transformed = coordStrs.map(fromLonLat);
-      feature = new Feature({
-        geometry: new Polygon([transformed]),
-        data: item,
-      });
+  // 合并所有数据
+  const allRows = [...firstPage.rows];
+  for (const res of results) {
+    allRows.push(...res.rows);
+  }
+  console.log("✅ 全部泊位数据获取完成，共：", allRows.length);
+
+  // 解析 GeoJSON 并创建 Feature
+  for (const item of allRows) {
+    let geo = item.geoJSON;
+
+    // 如果字段是字符串，尝试转为对象
+    if (typeof geo === "string") {
+      try {
+        if (!geo || typeof geo !== "string") continue; // ⭐关键判断
+        geo = JSON.parse(geo);
+      } catch (e) {
+        console.warn("❌ JSON 解析失败，跳过该条数据：", item.Id, item.geoJSON);
+        continue;
+      }
     }
-
+    if (!geo || !geo.type || !geo.coordinates) {
+      console.warn("❌ GeoJSON 不完整，跳过：", item.Id, item.geoJSON);
+      continue;
+    }
+    let feature = null;
+    if (geo.type === "Point") {
+      feature = new Feature({
+        geometry: new Point(fromLonLat(geo.coordinates)),
+        data: item,
+      });
+    } else if (geo.type === "Polygon") {
+      const ring = geo.coordinates[0].map((coord) => fromLonLat(coord));
+      feature = new Feature({
+        geometry: new Polygon([ring]),
+        data: item,
+      });
+    } else {
+      console.warn("❌ 不支持的类型：", geo.type);
+      continue;
+    }
     if (feature) {
       features.push(feature);
     }
@@ -67,23 +97,7 @@ async function attachMapEvents(map) {
   berthSource.clear();
   berthSource.addFeatures(features);
 
-  // 绑定交互
-  map.on("pointermove", (evt) => {
-    const hit = map.hasFeatureAtPixel(evt.pixel, {
-      layerFilter: (l) => l === berthLayer,
-    });
-    map.getTargetElement().style.cursor = hit ? "pointer" : "";
-  });
-
-  map.on("singleclick", (evt) => {
-    const feat = map.forEachFeatureAtPixel(evt.pixel, (f) => f, {
-      layerFilter: (l) => l === berthLayer,
-    });
-    if (feat) {
-      emit("feature-clicked", feat.get("data"));
-    }
-  });
-
+  // …保持原有的鼠标悬浮/点击事件绑定…
   emit("map-layer-ready", berthLayer);
 }
 

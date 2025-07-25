@@ -17,6 +17,13 @@ const WaterLevel = defineAsyncComponent(() =>
 const LayerBerth = defineAsyncComponent(() =>
   import("@/components/dashboard/LayerBerth.vue")
 );
+const LayerLock = defineAsyncComponent(() =>
+  import("@/components/dashboard/LayerLock.vue")
+);
+const LayerBridge = defineAsyncComponent(() =>
+  import("@/components/dashboard/LayerBridge.vue")
+);
+
 import WaterLevelChart from "@/components/dashboard/WaterLevelChart.vue";
 
 
@@ -74,18 +81,8 @@ const waterLevelRef = ref(null); // WaterLevel 的实例
 const selectedItem = ref(null); // 当前选中的地理要素
 const measurementData = ref(null); // 测量数据
 const berthRef = ref(null);
-
-// ✅ 监听组件 ref 初始化完成后执行 map 事件绑定
-watch(
-  () => berthRef.value,
-  async (val) => {
-    if (val && selectedItems.value.includes("berth")) {
-      console.log("🟢 berthRef 已就绪，绑定 map 事件");
-      await nextTick(); // 等待 DOM 更新完成
-      val.attachMapEvents(map.value);
-    }
-  }
-);
+const lockref = ref(null);
+const bridgeref = ref(null);
 
 // --------- 通用信息面板 ---------
 // 关闭面板时，清空选中要素
@@ -191,6 +188,43 @@ watch(
   }
 );
 
+// ✅ 监听组件 ref 初始化完成后执行 map 事件绑定
+watch(
+  () => berthRef.value,
+  async (val) => {
+    if (val && selectedItems.value.includes("berth")) {
+      console.log("🟢 berthRef 已就绪，绑定 map 事件");
+      await nextTick(); // 等待 DOM 更新完成
+      val.attachMapEvents(map.value);
+    }
+  }
+);
+
+watch(
+  () => lockref.value,
+  async (val) => {
+    if (val && selectedItems.value.includes("lock")) {
+      console.log("🟢 lockRef 已就绪，绑定 map 事件");
+      await nextTick(); // 等待 DOM 更新完成
+      val.attachMapEvents(map.value);
+    }
+  }
+);
+
+watch(
+  () => bridgeref.value,
+  async (val) => {
+    if (val && selectedItems.value.includes("bridge")) {
+      console.log("🟢 bridgeRef 已就绪，绑定 map 事件");
+      await nextTick(); // 等待 DOM 更新完成
+      val.attachMapEvents(map.value);
+    }
+  }
+);
+
+
+
+
 // 监听 checkbox 勾选变化
 watch(selectedItems, (newVal, oldVal) => {
   if (!map.value) return;
@@ -207,19 +241,61 @@ watch(selectedItems, (newVal, oldVal) => {
   }
 
   // ✅ 注册 berth 图层
-if (newVal.includes("berth") && !oldVal.includes("berth")) {
-  berthRef.value?.attachMapEvents(map.value);
-  registerLayer(berthRef.value?.getLayer?.());
-}
+  // 勾选 berth 时，如果组件实例已准备好则直接绑定并注册；
+  // 若尚未加载完成，则在上面的 berthRef watcher 中处理
+  if (newVal.includes('berth') && !oldVal.includes('berth')) {
+    if (berthRef.value) {
+      berthRef.value.attachMapEvents(map.value);
+      registerLayer(berthRef.value.getLayer?.());
+    }
+  }
+  // 取消勾选时卸载
+  if (!newVal.includes('berth') && oldVal.includes('berth')) {
+    unregisterLayer('berth');
+  }
 
-// ✅ 取消注册 berth 图层
-if (!newVal.includes("berth") && oldVal.includes("berth")) {
-  unregisterLayer("berth");
-}
+  // ✅ 注册 lock 图层
+  // 勾选 lock 时，如果组件实例已准备好则直接绑定并注册；
+  // 若尚未加载完成，则在上面的 lockref watcher 中处理
+  if (newVal.includes('lock') && !oldVal.includes('lock')) {
+    if (lockref.value) {
+      lockref.value.attachMapEvents(map.value);
+      registerLayer(lockref.value.getLayer?.());
+    }
+  }
+  // 取消勾选时卸载
+  if (!newVal.includes('lock') && oldVal.includes('lock')) {
+    unregisterLayer('lock');
+  }
+
+  // ✅ 注册 bridge 图层
+  // 勾选 bridge 时，如果组件实例已准备好则直接绑定并注册；
+  // 若尚未加载完成，则在上面的 bridgeref watcher 中处理
+  if (newVal.includes('bridge') && !oldVal.includes('bridge')) {
+    if (bridgeref.value) {
+      bridgeref.value.attachMapEvents(map.value);
+      registerLayer(bridgeref.value.getLayer?.());
+    }
+  }
+  // 取消勾选时卸载
+  if (!newVal.includes('bridge') && oldVal.includes('bridge')) {
+    unregisterLayer('bridge');
+  }
+
+
+
 
   // 存储勾选的图层设置
   localStorage.setItem("selectedItems", JSON.stringify(newVal));
 });
+
+
+
+
+
+
+
+
 
 // ---------  图层控件 ---------
 // 信息导航栏数据
@@ -330,6 +406,27 @@ watch(measurementData, (newVal) => {
           @map-layer-ready="registerLayer"
           @feature-clicked="handleFeatureClick"
         />
+
+        <component
+          :is="LayerLock"
+          v-if="selectedItems.includes('lock')"
+          ref="lockref"
+          @map-layer-ready="registerLayer"
+          @feature-clicked="handleFeatureClick"
+        />
+
+        <component
+          :is="LayerBridge"
+          v-if="selectedItems.includes('bridge')"
+          ref="bridgeref"
+          @map-layer-ready="registerLayer"
+          @feature-clicked="handleFeatureClick"
+        />  
+
+
+
+
+
 
         <!-- 图层切换按钮组 -->
         <div class="btn-group">

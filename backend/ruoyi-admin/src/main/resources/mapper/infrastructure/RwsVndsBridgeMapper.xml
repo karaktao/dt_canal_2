@@ -41,7 +41,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectRwsVndsBridgeVo">
-        select Id, GeoGeneration, GeoType, Geometry, Name, FairwayId, FairwaySectionId, RouteId, RouteKmBegin, RouteKmEnd, Referencelevel, MhwReferenceLevel, VoyagePlanningPoint, AdministrationId, CanOpen, City, Condition, ForeignCode, HasOpeningOnOtherFairway, IsRemoteControlled, IsrsId, Length, MhwOffset, Note, NumberOfOpenings, OperatingTimesId, PhoneNumber, RelatedBuildingComplexName, Rotation, VinCode, Width, CreatedAt, GeoJSON from rws_VNDS_bridge
+        select  Id, GeoGeneration, GeoType, Geometry, Name, FairwayId, FairwaySectionId, RouteId, RouteKmBegin, RouteKmEnd, Referencelevel, MhwReferenceLevel, VoyagePlanningPoint, AdministrationId, CanOpen, City, `Condition`, `ForeignCode`, `HasOpeningOnOtherFairway`, `IsRemoteControlled`, `IsrsId`, Length, MhwOffset, Note, NumberOfOpenings, OperatingTimesId, PhoneNumber, RelatedBuildingComplexName, Rotation, VinCode, Width, CreatedAt, GeoJSON from rws_VNDS_bridge
     </sql>
 
     <select id="selectRwsVndsBridgeList" parameterType="RwsVndsBridge" resultMap="RwsVndsBridgeResult">
