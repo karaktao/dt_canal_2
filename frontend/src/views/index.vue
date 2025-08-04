@@ -425,9 +425,6 @@ watch(measurementData, (newVal) => {
 
 
 
-
-
-
         <!-- 图层切换按钮组 -->
         <div class="btn-group">
           <el-button size="small" @click="toggleLayer('street')"
