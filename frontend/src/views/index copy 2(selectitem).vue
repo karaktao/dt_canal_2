@@ -347,7 +347,16 @@ onBeforeUnmount(() => {
 // ---------  处理子组件事件 ---------
 // 信息导航栏点击事件
 function handleFeatureClick(feature) {
-  selectedItem.value = feature ? { locCode: feature.locCode, locNaam: feature.locNaam } : null;
+  if (feature) {
+    selectedItem.value = {
+      locCode: feature.locCode,
+      locNaam: feature.locNaam,
+      locX: feature.locX,
+      locY: feature.locY,
+    };
+  } else {
+    selectedItem.value = null;
+  }
 }
 // 处理测量数据加载事件
 function handleMeasurementLoaded(data) {
@@ -480,7 +489,7 @@ watch(measurementData, (newVal) => {
       >
         <!-- 如果想自定义内容，可用 slot -->
         <template #content>
-          <WaterLevelChart v-if="selectedItem" :data="selectedItem" />
+          <WaterLevelChart v-if="measurementData" :data="measurementData" />
         </template>
 
         <!-- footer 插槽：未来放按钮 -->

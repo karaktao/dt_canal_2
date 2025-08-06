@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from 'vite'
 import path from 'path'
 import createVitePlugins from './vite/plugins'
 
+
 const baseUrl = 'http://localhost:8080' // 后端接口
 
 // https://vitejs.dev/config/
@@ -40,31 +41,54 @@ export default defineConfig(({ mode, command }) => {
         }
       }
     },
+
     // vite 相关配置
-server: {
-  port: 80,
-  host: true,
-  open: true,
-  proxy: {
-    // 原有 dev-api 代理
-    '/dev-api': {
-      target: baseUrl,
-      changeOrigin: true,
-      rewrite: (p) => p.replace(/^\/dev-api/, '')
+    server: {
+      port: 80,
+      host: true,
+      open: true,
+      proxy: {
+        // 原有 dev-api 代理
+        '/dev-api': {
+          target: baseUrl,
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/dev-api/, '')
+        },
+        // 原有 springdoc 代理
+        '^/v3/api-docs/(.*)': {
+          target: baseUrl,
+          changeOrigin: true,
+        },
+        // ✅ 新增 rijks API 代理
+        '/api/rijks': {
+          target: 'https://waterwebservices.rijkswaterstaat.nl',
+          changeOrigin: true,
+          rewrite: path => path.replace(/^\/api\/rijks/, ''),
+        },
+
+        // ✅ Rijks REST API 代理：waterinfo.rws.nl
+        '/api/waterinfo': {
+          target: 'https://waterinfo.rws.nl',
+          changeOrigin: true,
+          rewrite: path => path.replace(/^\/api\/waterinfo/, '')
+        },
+        // ✅ Rijks Matroos + Lobith 代理：v14.rws.nl
+        '/api/v14rws': {
+          target: 'https://v14.rws.nl',
+          changeOrigin: true,
+          rewrite: path => path.replace(/^\/api\/v14rws/, '')
+        }
+
+
+
+
+
+
+
+      }
     },
-    // 原有 springdoc 代理
-    '^/v3/api-docs/(.*)': {
-      target: baseUrl,
-      changeOrigin: true,
-    },
-    // ✅ 新增 rijks API 代理
-    '/api/rijks': {
-      target: 'https://waterwebservices.rijkswaterstaat.nl',
-      changeOrigin: true,
-      rewrite: path => path.replace(/^\/api\/rijks/, ''),
-    }
-  }
-},
+
+
 
 
 

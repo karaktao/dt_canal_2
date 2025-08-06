@@ -85,6 +85,7 @@ app.use(store)
 app.use(plugins)
 app.use(elementIcons)
 app.component('svg-icon', SvgIcon)
+app.use(pinia)
 
 directive(app)
 
