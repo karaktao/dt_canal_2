@@ -31,9 +31,9 @@ const emit = defineEmits([
 const measurementData = ref(null);
 const loading = ref(false);
 
-const waterLevelSource = new VectorSource();
-const waterLevelLayer = new VectorLayer({
-  source: waterLevelSource,
+const waterTemperatureSource = new VectorSource();
+const waterTemperatureLayer = new VectorLayer({
+  source: waterTemperatureSource,
   zIndex: 100, // ✅ 确保叠加在底图上方
   opacity: 1.0, // ✅ 不透明
   style: (feature) => {
@@ -52,14 +52,14 @@ const waterLevelLayer = new VectorLayer({
 function attachMapEvents(map) {
   map.on("pointermove", (evt) => {
     const hit = map.hasFeatureAtPixel(evt.pixel, {
-      layerFilter: (layer) => layer.get("name") === "waterLevel",
+      layerFilter: (layer) => layer.get("name") === "waterTemperature",
     });
     map.getTargetElement().style.cursor = hit ? "pointer" : "";
   });
 
   map.on("singleclick", (evt) => {
     const feat = map.forEachFeatureAtPixel(evt.pixel, (f) => f, {
-      layerFilter: (layer) => layer.get("name") === "waterLevel",
+      layerFilter: (layer) => layer.get("name") === "waterTemperature",
     });
 
     if (!feat) {
@@ -83,11 +83,11 @@ function attachMapEvents(map) {
 
 
 onMounted(async () => {
-  console.log("📌 WaterLevel - 使用 RWS API 加载");
+  console.log("📌 waterTemperature - 使用 RWS API 加载");
 
   try {
     const response = await fetch(
-      "/api/waterinfo/api/point/latestmeasurement?parameterId=waterhoogte"
+      "/api/waterinfo/api/point/latestmeasurement?parameterId=watertemperatuur"
     );
     const geojson = await response.json();
 
@@ -130,13 +130,13 @@ onMounted(async () => {
         })
       );
 
-      waterLevelSource.addFeature(feat);
+      waterTemperatureSource.addFeature(feat);
     });
 
-    waterLevelLayer.set("name", "waterLevel");
-    emit("map-layer-ready", waterLevelLayer);
+    waterTemperatureLayer.set("name", "waterTemperature");
+    emit("map-layer-ready", waterTemperatureLayer);
 
-    console.log("✅ 加载完成，总点数：", waterLevelSource.getFeatures().length);
+    console.log("✅ 加载完成，总点数：", waterTemperatureSource.getFeatures().length);
   } catch (err) {
     console.error("❌ 获取水位信息失败", err);
   }
@@ -147,6 +147,6 @@ onMounted(async () => {
 
 defineExpose({
   attachMapEvents,
-  getLayer: () => waterLevelLayer, // ✅ 暴露图层
+  getLayer: () => waterTemperatureLayer, // ✅ 暴露图层
 });
 </script>

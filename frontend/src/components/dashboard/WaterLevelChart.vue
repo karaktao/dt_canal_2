@@ -1,6 +1,5 @@
 <template>
   <el-card
-    v-if="chartData[currentKey]"
     style="width: 100%; height: 300px; margin-top: 10px"
   >
     <div style="margin-bottom: 10px">
@@ -16,11 +15,6 @@
       </el-button-group>
     </div>
     <div ref="chartRef" style="width: 100%; height: 240px"></div>
-  </el-card>
-  <el-card v-else>
-    <div style="text-align: center; padding: 20px">
-      ⏳ Loading chart data...
-    </div>
   </el-card>
 </template>
 
@@ -38,7 +32,7 @@ const currentData = computed(() => chartData.value[currentKey.value]);
 const valuesList = ["-6,3", "-48,48", "-216,48", "-672,0"];
 const labelMap = {
   "-6,3": "–6h to +3h",
-  "-48,48": "±2 Days",
+  "-48,48": "–2d to +2d",
   "-216,48": "–11d to +2d",
   "-672,0": "	–28 Days",
 };
