@@ -29,11 +29,11 @@ const props = defineProps({
 const currentData = computed(() => chartData.value[currentKey.value]);
 
 // 时间段列表和对应标签
-const valuesList = ["-6,3", "-48,48", "-216,48", "-672,0"];
+const valuesList = ["-6,0", "-48,0", "-216,0", "-672,0"];
 const labelMap = {
-  "-6,3": "–6h to +3h",
-  "-48,48": "–2d to +2d",
-  "-216,48": "–9d to +2d",
+  "-6,0": "–6 Hours",
+  "-48,0": "–2 Days",
+  "-216,0": "–11 Days",
   "-672,0": "	–28 Days",
 };
 
@@ -41,12 +41,12 @@ const chartRef = ref(null);
 let chartInstance = null;
 
 const chartData = ref({
-  "-6,3": null,
-  "-48,48": null,
-  "-216,48": null,
+  "-6,0": null,
+  "-48,0": null,
+  "-216,0": null,
   "-672,0": null,
 });
-const currentKey = ref("-6,3"); // 默认2天
+const currentKey = ref("-6,0"); // 默认2天
 
 // 监听传入点位变化，自动请求所有时间段
 watch(
@@ -65,7 +65,7 @@ watch(
       axios
         .get("/api/waterinfo/api/chart/get", {
           params: {
-            mapType: "waterhoogte",
+            mapType: "watertemperatuur",
             locationCodes: props.data.locCode,
             values,
           },
@@ -89,8 +89,8 @@ watch(
         chartData.value[result.key] = result.data;
       });
       // 默认渲染2天数据
-      renderChart(chartData.value["-6,3"], "-6,3");
-      currentKey.value = "-6,3";
+      renderChart(chartData.value["-6,0"], "-6,0");
+      currentKey.value = "-6,0";
     } catch (err) {
       console.error("获取水位图数据失败", err);
     }
@@ -168,17 +168,6 @@ function renderChart(data, key = currentKey.value) {
       itemStyle: { color: "#409EFF" },
       areaStyle: { opacity: 0.2 },
     },
-    {
-      name: "Forecast",
-      type: "line",
-      data: predValues,
-      smooth: true,
-      symbol: "circle",
-      connectNulls: true,
-      lineStyle: { color: "#F56C6C", type: "dashed" },
-      itemStyle: { color: "#F56C6C" },
-      areaStyle: { opacity: 0.1 },
-    },
   ];
 
   // ✅ 添加背景分段 markArea 到图例
@@ -206,7 +195,7 @@ function renderChart(data, key = currentKey.value) {
 
   chartInstance.setOption({
     title: {
-      text: `Water Level - ${props.data.locNaam || ""}`,
+      text: `Water Temperature - ${props.data.locNaam || ""}`,
       left: "center",
     },
     tooltip: {
@@ -250,7 +239,7 @@ function renderChart(data, key = currentKey.value) {
     },
     yAxis: {
       type: "value",
-      name: "Water Level (cm)",
+      name: "( °C )",
       min: data.extremesY?.min ?? "auto",
       max: data.extremesY?.max ?? "auto",
       axisLabel: {

@@ -10,7 +10,7 @@ import { Style, Fill, Stroke, Circle as CircleStyle } from "ol/style";
 import { transform } from "ol/proj";
 import proj4 from "proj4";
 import { register } from "ol/proj/proj4";
-
+import Text from "ol/style/Text";
 
 // 注册投影
 proj4.defs(
@@ -19,7 +19,6 @@ proj4.defs(
 );
 proj4.defs("EPSG:25831", "+proj=utm +zone=31 +ellps=GRS80 +units=m +no_defs");
 register(proj4);
-
 
 // ✅ 用于向外传递图层 + 要素点击信息 + 数据
 const emit = defineEmits([
@@ -46,8 +45,6 @@ const waterTemperatureLayer = new VectorLayer({
     });
   },
 });
-
-
 
 function attachMapEvents(map) {
   map.on("pointermove", (evt) => {
@@ -77,10 +74,10 @@ function attachMapEvents(map) {
       locNaam,
       latestValue,
       label,
+      layerType: "waterTemperature", // ← 新增
     });
   });
 }
-
 
 onMounted(async () => {
   console.log("📌 waterTemperature - 使用 RWS API 加载");
@@ -122,28 +119,38 @@ onMounted(async () => {
 
       feat.setStyle(
         new Style({
-          image: new CircleStyle({
-            radius: 6,
-            fill: new Fill({ color }),
-            stroke: new Stroke({ color: "#fff", width: 2 }),
+          text: new Text({
+            text:
+              measurement.latestValue !== undefined
+                ? `${measurement.latestValue} °C`
+                : "",
+            font: "bold 12px sans-serif",
+            fill: new Fill({ color: measurement.measurementColor }), // ✅ 用测量颜色做文字色
+            // stroke: new Stroke({ color: "rgba(255, 255, 255, 0.9)", width: 2 }), // ✅ 白色描边，90% 透明
+            backgroundFill: new Fill({ color: "rgba(255, 255, 255, 0.8)" }), // ✅ 白色背景，90% 透明
+            backgroundStroke: new Stroke({
+              color: "rgba(255, 255, 255, 0.7)",
+              width: 5,
+            }), // ✅ 同样透明度
+            padding: [2, 4, 0, 6],
+            offsetY: -23,
           }),
         })
       );
-
       waterTemperatureSource.addFeature(feat);
     });
 
     waterTemperatureLayer.set("name", "waterTemperature");
     emit("map-layer-ready", waterTemperatureLayer);
 
-    console.log("✅ 加载完成，总点数：", waterTemperatureSource.getFeatures().length);
+    console.log(
+      "✅ 加载完成，总点数：",
+      waterTemperatureSource.getFeatures().length
+    );
   } catch (err) {
     console.error("❌ 获取水位信息失败", err);
   }
 });
-
-
-
 
 defineExpose({
   attachMapEvents,

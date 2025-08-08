@@ -65,7 +65,7 @@ watch(
       axios
         .get("/api/waterinfo/api/chart/get", {
           params: {
-            mapType: "waterhoogte",
+            mapType: "waterafvoer",
             locationCodes: props.data.locCode,
             values,
           },
@@ -206,7 +206,7 @@ function renderChart(data, key = currentKey.value) {
 
   chartInstance.setOption({
     title: {
-      text: `Water Level - ${props.data.locNaam || ""}`,
+      text: `Water Discharge - ${props.data.locNaam || ""}`,
       left: "center",
     },
     tooltip: {
@@ -250,7 +250,7 @@ function renderChart(data, key = currentKey.value) {
     },
     yAxis: {
       type: "value",
-      name: "Water Level (cm)",
+      name: "( m³/s )",
       min: data.extremesY?.min ?? "auto",
       max: data.extremesY?.max ?? "auto",
       axisLabel: {

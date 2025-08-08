@@ -1,6 +1,6 @@
 <script setup>
-import { storeToRefs } from 'pinia'
-import { useMapLayerStore } from '@/store/mapLayers'
+import { storeToRefs } from "pinia";
+import { useMapLayerStore } from "@/store/mapLayers";
 
 // 地图输入
 import {
@@ -34,7 +34,8 @@ const WaterTemperature = defineAsyncComponent(() =>
 );
 
 import WaterLevelChart from "@/components/dashboard/WaterLevelChart.vue";
-
+import WaterDischargeChart from "@/components/dashboard/waterDischargeChart.vue";
+import WaterTemperatureChart from "@/components/dashboard/waterTemperatureChart.vue";
 
 import InfoPanel from "@/components/dashboard/InfoPanel.vue";
 
@@ -90,7 +91,6 @@ const waterLevelRef = ref(null); // WaterLevel 的实例
 const waterDischargeRef = ref(null); // WaterDischarge 的实例
 const waterTemperatureRef = ref(null); // WaterTemperature 的实例
 
-
 const selectedItem = ref(null); // 当前选中的地理要素
 const measurementData = ref(null); // 测量数据
 const berthRef = ref(null);
@@ -105,6 +105,7 @@ function closePanel() {
 function doSomething() {
   // TODO: 你要的“查看详情”逻辑
 }
+const activeLayerType = ref(null); // 当前激活图层的类型
 
 // --------- 地图初始化 ---------
 onMounted(() => {
@@ -201,7 +202,7 @@ watch(
   }
 );
 
-watch(      
+watch(
   () => waterDischargeRef.value,
   async (val) => {
     if (val && selectedItems.value.includes("discharge")) {
@@ -210,7 +211,7 @@ watch(
       val.attachMapEvents(map.value);
     }
   }
-)
+);
 
 watch(
   () => waterTemperatureRef.value,
@@ -220,8 +221,8 @@ watch(
       await nextTick(); // 等待 DOM 更新完成
       val.attachMapEvents(map.value);
     }
-  } 
-)
+  }
+);
 
 // ✅ 监听组件 ref 初始化完成后执行 map 事件绑定
 watch(
@@ -257,9 +258,6 @@ watch(
   }
 );
 
-
-
-
 // 监听 checkbox 勾选变化
 watch(selectedItems, (newVal, oldVal) => {
   if (!map.value) return;
@@ -276,9 +274,9 @@ watch(selectedItems, (newVal, oldVal) => {
     registerLayer(waterDischargeRef.value?.getLayer?.());
   }
 
-  // 勾选 waterTemperature 时注册并绑定      
+  // 勾选 waterTemperature 时注册并绑定
   if (newVal.includes("temperature") && !oldVal.includes("temperature")) {
-    waterTemperatureRef.value?.attachMapEvents(map.value);      
+    waterTemperatureRef.value?.attachMapEvents(map.value);
     registerLayer(waterTemperatureRef.value?.getLayer?.());
   }
 
@@ -300,51 +298,48 @@ watch(selectedItems, (newVal, oldVal) => {
   // ✅ 注册 berth 图层
   // 勾选 berth 时，如果组件实例已准备好则直接绑定并注册；
   // 若尚未加载完成，则在上面的 berthRef watcher 中处理
-  if (newVal.includes('berth') && !oldVal.includes('berth')) {
+  if (newVal.includes("berth") && !oldVal.includes("berth")) {
     if (berthRef.value) {
       berthRef.value.attachMapEvents(map.value);
       registerLayer(berthRef.value.getLayer?.());
     }
   }
   // 取消勾选时卸载
-  if (!newVal.includes('berth') && oldVal.includes('berth')) {
-    unregisterLayer('berth');
+  if (!newVal.includes("berth") && oldVal.includes("berth")) {
+    unregisterLayer("berth");
   }
 
   // ✅ 注册 lock 图层
   // 勾选 lock 时，如果组件实例已准备好则直接绑定并注册；
   // 若尚未加载完成，则在上面的 lockref watcher 中处理
-  if (newVal.includes('lock') && !oldVal.includes('lock')) {
+  if (newVal.includes("lock") && !oldVal.includes("lock")) {
     if (lockref.value) {
       lockref.value.attachMapEvents(map.value);
       registerLayer(lockref.value.getLayer?.());
     }
   }
   // 取消勾选时卸载
-  if (!newVal.includes('lock') && oldVal.includes('lock')) {
-    unregisterLayer('lock');
+  if (!newVal.includes("lock") && oldVal.includes("lock")) {
+    unregisterLayer("lock");
   }
 
   // ✅ 注册 bridge 图层
   // 勾选 bridge 时，如果组件实例已准备好则直接绑定并注册；
   // 若尚未加载完成，则在上面的 bridgeref watcher 中处理
-  if (newVal.includes('bridge') && !oldVal.includes('bridge')) {
+  if (newVal.includes("bridge") && !oldVal.includes("bridge")) {
     if (bridgeref.value) {
       bridgeref.value.attachMapEvents(map.value);
       registerLayer(bridgeref.value.getLayer?.());
     }
   }
   // 取消勾选时卸载
-  if (!newVal.includes('bridge') && oldVal.includes('bridge')) {
-    unregisterLayer('bridge');
+  if (!newVal.includes("bridge") && oldVal.includes("bridge")) {
+    unregisterLayer("bridge");
   }
-
 
   // 存储勾选的图层设置
   localStorage.setItem("selectedItems", JSON.stringify(newVal));
 });
-
-
 
 // ---------  图层控件 ---------
 // 信息导航栏数据
@@ -401,7 +396,16 @@ onBeforeUnmount(() => {
 // ---------  处理子组件事件 ---------
 // 信息导航栏点击事件
 function handleFeatureClick(feature) {
-  selectedItem.value = feature ? { locCode: feature.locCode, locNaam: feature.locNaam } : null;
+  if (feature) {
+    selectedItem.value = {
+      locCode: feature.locCode,
+      locNaam: feature.locNaam,
+    };
+    activeLayerType.value = feature.layerType || null; // ← 新增
+  } else {
+    selectedItem.value = null;
+    activeLayerType.value = null;
+  }
 }
 // 处理测量数据加载事件
 function handleMeasurementLoaded(data) {
@@ -444,7 +448,7 @@ watch(measurementData, (newVal) => {
           v-if="selectedItems.includes('discharge')"
           ref="waterDischargeRef"
           @map-layer-ready="registerLayer"
-          @feature-clicked="handleFeatureClick" 
+          @feature-clicked="handleFeatureClick"
         />
 
         <component
@@ -477,9 +481,7 @@ watch(measurementData, (newVal) => {
           ref="bridgeref"
           @map-layer-ready="registerLayer"
           @feature-clicked="handleFeatureClick"
-        />  
-
-
+        />
 
         <!-- 图层切换按钮组 -->
         <div class="btn-group">
@@ -550,9 +552,18 @@ watch(measurementData, (newVal) => {
       >
         <!-- 如果想自定义内容，可用 slot -->
         <template #content>
-          <WaterLevelChart v-if="selectedItem" :data="selectedItem" />
-          <WaterDischarge v-if="selectedItem" :data="selectedItem" />
-          <WaterTemperature v-if="selectedItem" :data="selectedItem" />
+          <WaterLevelChart
+            v-if="selectedItem && activeLayerType === 'waterLevel'"
+            :data="selectedItem"
+          />
+          <WaterDischargeChart
+            v-if="selectedItem && activeLayerType === 'waterDischarge'"
+            :data="selectedItem"
+          />
+          <WaterTemperatureChart
+            v-if="selectedItem && activeLayerType === 'waterTemperature'"
+            :data="selectedItem"
+          />
         </template>
 
         <!-- footer 插槽：未来放按钮 -->

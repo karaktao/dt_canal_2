@@ -10,6 +10,7 @@ import { Style, Fill, Stroke, Circle as CircleStyle } from "ol/style";
 import { transform } from "ol/proj";
 import proj4 from "proj4";
 import { register } from "ol/proj/proj4";
+import Text from "ol/style/Text";
 
 
 // 注册投影
@@ -77,6 +78,7 @@ function attachMapEvents(map) {
       locNaam,
       latestValue,
       label,
+      layerType: "waterDischarge", // ← 新增
     });
   });
 }
@@ -122,10 +124,21 @@ onMounted(async () => {
 
       feat.setStyle(
         new Style({
-          image: new CircleStyle({
-            radius: 6,
-            fill: new Fill({ color }),
-            stroke: new Stroke({ color: "#fff", width: 2 }),
+          text: new Text({
+            text:
+              measurement.latestValue !== undefined
+                ? `🌀：${measurement.latestValue} m³/s`
+                : "",
+            font: "bold 12px sans-serif",
+            fill: new Fill({ color: measurement.measurementColor }), // ✅ 用测量颜色做文字色
+            // stroke: new Stroke({ color: "rgba(255, 255, 255, 0.9)", width: 2 }), // ✅ 白色描边，90% 透明
+            backgroundFill: new Fill({ color: "rgba(255, 255, 255, 0.8)" }), // ✅ 白色背景，90% 透明
+            backgroundStroke: new Stroke({
+              color: "rgba(255, 255, 255, 0.7)",
+              width: 5,
+            }), // ✅ 同样透明度
+            padding: [2, 4, 0, 6],
+            offsetY: 23,
           }),
         })
       );
