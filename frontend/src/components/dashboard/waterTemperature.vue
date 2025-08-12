@@ -33,7 +33,7 @@ const loading = ref(false);
 const waterTemperatureSource = new VectorSource();
 const waterTemperatureLayer = new VectorLayer({
   source: waterTemperatureSource,
-  zIndex: 100, // ✅ 确保叠加在底图上方
+  zIndex: 101, // ✅ 确保叠加在底图上方
   opacity: 1.0, // ✅ 不透明
   style: (feature) => {
     return new Style({
@@ -47,36 +47,36 @@ const waterTemperatureLayer = new VectorLayer({
 });
 
 function attachMapEvents(map) {
-  map.on("pointermove", (evt) => {
-    const hit = map.hasFeatureAtPixel(evt.pixel, {
-      layerFilter: (layer) => layer.get("name") === "waterTemperature",
-    });
-    map.getTargetElement().style.cursor = hit ? "pointer" : "";
-  });
+  // map.on("pointermove", (evt) => {
+  //   const hit = map.hasFeatureAtPixel(evt.pixel, {
+  //     layerFilter: (layer) => layer.get("name") === "waterTemperature",
+  //   });
+  //   map.getTargetElement().style.cursor = hit ? "pointer" : "";
+  // });
 
-  map.on("singleclick", (evt) => {
-    const feat = map.forEachFeatureAtPixel(evt.pixel, (f) => f, {
-      layerFilter: (layer) => layer.get("name") === "waterTemperature",
-    });
+  // map.on("singleclick", (evt) => {
+  //   const feat = map.forEachFeatureAtPixel(evt.pixel, (f) => f, {
+  //     layerFilter: (layer) => layer.get("name") === "waterTemperature",
+  //   });
 
-    if (!feat) {
-      emit("feature-clicked", null);
-      return;
-    }
+  //   if (!feat) {
+  //     emit("feature-clicked", null);
+  //     return;
+  //   }
 
-    const locCode = feat.get("locCode");
-    const locNaam = feat.get("locNaam");
-    const latestValue = feat.get("latestValue");
-    const label = feat.get("label");
+  //   const locCode = feat.get("locCode");
+  //   const locNaam = feat.get("locNaam");
+  //   const latestValue = feat.get("latestValue");
+  //   const label = feat.get("label");
 
-    emit("feature-clicked", {
-      locCode,
-      locNaam,
-      latestValue,
-      label,
-      layerType: "waterTemperature", // ← 新增
-    });
-  });
+  //   emit("feature-clicked", {
+  //     locCode,
+  //     locNaam,
+  //     latestValue,
+  //     label,
+  //     layerType: "waterTemperature", // ← 新增
+  //   });
+  // });
 }
 
 onMounted(async () => {

@@ -11,7 +11,7 @@ import { listVNDSbridge } from "@/api/infrastructure/VNDSbridge";
 const bridgeSource = new VectorSource();
 const bridgeLayer = new VectorLayer({
   source: bridgeSource,
-  zIndex: 1001,
+  zIndex: 100,
   style: (feature) => {
     const type = feature.getGeometry().getType();
     return type === "Point"

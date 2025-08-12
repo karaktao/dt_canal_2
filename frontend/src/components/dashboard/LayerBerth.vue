@@ -11,7 +11,7 @@ import { listVNDSberth } from "@/api/infrastructure/VNDSberth";
 const berthSource = new VectorSource();
 const berthLayer = new VectorLayer({
   source: berthSource,
-  zIndex: 1001,
+  zIndex: 100,
   style: (feature) => {
     const type = feature.getGeometry().getType();
     return type === "Point"

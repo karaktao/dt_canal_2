@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <title>Openable Bridge Icon (Centered)</title>
+  <circle cx="64" cy="64" r="60" fill="#8B5CF6"/>
+  <!-- shift white drawing up by ~15px to visually center -->
+  <g transform="translate(0,-15)">
+    <!-- fixed deck (left) -->
+    <path d="M22 86 H64" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+    <!-- openable span (right) -->
+    <path d="M64 86 L102 52" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+    <!-- hinge -->
+    <circle cx="64" cy="86" r="4.5" fill="#FFFFFF"/>
+    <!-- counterweight / tower hint -->
+    <path d="M22 94 V104 M102 60 V70" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+    <!-- base line -->
+    <path d="M18 106 H110" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  </g>
+</svg>

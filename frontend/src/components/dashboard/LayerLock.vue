@@ -11,7 +11,7 @@ import { listVNDSlock } from "@/api/infrastructure/VNDSlock";
 const lockSource = new VectorSource();
 const lockLayer = new VectorLayer({
   source: lockSource,
-  zIndex: 1001,
+  zIndex: 100,
   style: (feature) => {
     const type = feature.getGeometry().getType();
     return type === "Point"

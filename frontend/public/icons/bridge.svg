@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <title>Bridge Icon (Centered)</title>
+  <circle cx="64" cy="64" r="60" fill="#8B5CF6"/>
+  <!-- shift white drawing up by ~11px to visually center -->
+  <g transform="translate(0,-11)">
+    <!-- bridge arch -->
+    <path d="M22 84 Q64 50 106 84" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+    <!-- deck -->
+    <path d="M22 84 H106" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+    <!-- verticals -->
+    <path d="M32 84 V70 M48 84 V62 M64 84 V58 M80 84 V62 M96 84 V70"
+          fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- piers -->
+    <path d="M28 92 V100 M100 92 V100" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+  </g>
+</svg>

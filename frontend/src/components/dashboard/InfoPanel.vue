@@ -48,7 +48,7 @@ import { ElButton, ElCard } from 'element-plus';
 
 const props = defineProps({
   visible: Boolean,
-  title: { type: String, default: '信息面板' },
+  title: { type: String, default: 'Info Panel' },
   item: { type: Object, default: () => ({}) },
 });
 
@@ -99,6 +99,7 @@ onBeforeUnmount(() => {
 });
 
 
+
 </script>
 
 <style scoped>
@@ -116,6 +117,10 @@ onBeforeUnmount(() => {
 }
 .info-panel.dragging {                   
   backdrop-filter: none;
+}
+
+.info-panel-wrapper :deep(.el-card__header) {
+  border-bottom: none;   /* 只去掉底线 */
 }
 
 /* 拖拽条 */

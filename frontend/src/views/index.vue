@@ -10,13 +10,12 @@ import {
   onMounted,
   defineAsyncComponent,
   nextTick,
+  onBeforeUnmount,
 } from "vue";
 import { ElButton, ElButtonGroup, ElCard, ElDivider } from "element-plus";
 
 // 异步加载 WaterLevel 组件
-const WaterLevel = defineAsyncComponent(() =>
-  import("@/components/dashboard/waterlevel.vue")
-);
+
 const LayerBerth = defineAsyncComponent(() =>
   import("@/components/dashboard/LayerBerth.vue")
 );
@@ -25,6 +24,18 @@ const LayerLock = defineAsyncComponent(() =>
 );
 const LayerBridge = defineAsyncComponent(() =>
   import("@/components/dashboard/LayerBridge.vue")
+);
+const BerthInfo = defineAsyncComponent(() =>
+  import("@/components/dashboard/LayerBerthInfo.vue")
+);
+const LockInfo = defineAsyncComponent(() =>
+  import("@/components/dashboard/LayerLockInfo.vue")
+);
+const BridgeInfo = defineAsyncComponent(() =>
+  import("@/components/dashboard/LayerBridgeInfo.vue")
+);
+const WaterLevel = defineAsyncComponent(() =>
+  import("@/components/dashboard/waterlevel.vue")
 );
 const WaterDischarge = defineAsyncComponent(() =>
   import("@/components/dashboard/waterDischarge.vue")
@@ -196,8 +207,8 @@ watch(
   async (val) => {
     if (val && selectedItems.value.includes("waterLevel")) {
       console.log("🟢 waterLevelRef 已就绪，绑定 map 事件");
-      await nextTick(); // 等待 DOM 更新完成
-      val.attachMapEvents(map.value);
+      // await nextTick(); // 等待 DOM 更新完成
+      // val.attachMapEvents(map.value);
     }
   }
 );
@@ -207,8 +218,8 @@ watch(
   async (val) => {
     if (val && selectedItems.value.includes("discharge")) {
       console.log("🟢 waterDischargeRef 已就绪，绑定 map 事件");
-      await nextTick(); // 等待 DOM 更新完成
-      val.attachMapEvents(map.value);
+      // await nextTick(); // 等待 DOM 更新完成
+      // val.attachMapEvents(map.value);
     }
   }
 );
@@ -218,8 +229,8 @@ watch(
   async (val) => {
     if (val && selectedItems.value.includes("temperature")) {
       console.log("🟢 waterTemperatureRef 已就绪，绑定 map 事件");
-      await nextTick(); // 等待 DOM 更新完成
-      val.attachMapEvents(map.value);
+      // await nextTick(); // 等待 DOM 更新完成
+      // val.attachMapEvents(map.value);
     }
   }
 );
@@ -414,6 +425,71 @@ function handleMeasurementLoaded(data) {
 watch(measurementData, (newVal) => {
   console.log("📊 measurementData 已更新", newVal);
 });
+
+// 水信息图层点击事件
+onMounted(() => {
+  // ✅ 统一 pointermove 检测
+  map.value.on("pointermove", (evt) => {
+    let hit = false;
+    map.value.forEachFeatureAtPixel(
+      evt.pixel,
+      (feature, layer) => {
+        if (!feature || !layer) return;
+        const layerName = layer.get("name");
+        if (
+          [
+            "waterLevel",
+            "waterDischarge",
+            "waterTemperature",
+            "berth",
+            "lock",
+            "bridge",
+          ].includes(layerName)
+        ) {
+          hit = true;
+          return true; // 找到一个就停
+        }
+      },
+      { hitTolerance: 5 }
+    );
+    map.value.getTargetElement().style.cursor = hit ? "pointer" : "";
+  });
+
+  // ✅ 统一 singleclick 检测
+  map.value.on("singleclick", (evt) => {
+    let hit = false;
+    map.value.forEachFeatureAtPixel(
+      evt.pixel,
+      (feature, layer) => {
+        if (!feature || !layer) return;
+        const layerName = layer.get("name");
+
+        if (layerName === "berth" || layerName === "lock" || layerName === "bridge") {
+          // 👇 LayerBerth 在 feature 上放了完整对象：feature.set('data', item)
+          //    并且图层名设为了 'berth'
+          const data = feature.get("data");
+          selectedItem.value = data; // 把整条记录传进面板
+          activeLayerType.value = layerName;
+        } else {
+          // 旧：水信息三层仍用 locCode/locNaam
+          const locCode = feature.get("locCode");
+          const locNaam = feature.get("locNaam");
+          selectedItem.value = { locCode, locNaam };
+          activeLayerType.value = layerName;
+        }
+        hit = true;
+        return true; // 命中就停
+      },
+      { hitTolerance: 5 }
+    );
+
+    // 👇 没点到任何要素：关闭信息面板
+    if (!hit) {
+      selectedItem.value = null;
+      activeLayerType.value = null;
+    }
+  });
+});
 </script>
 
 
@@ -546,7 +622,16 @@ watch(measurementData, (newVal) => {
 
       <InfoPanel
         :visible="!!selectedItem"
-        :title="selectedItem ? selectedItem.locNaam : '信息面板'"
+        :title="
+          selectedItem
+            ? selectedItem.name ||
+              selectedItem.berthName ||
+
+              selectedItem.locNaam ||
+              ''
+            : ''
+        "
+        :hide-header="true"
         :item="selectedItem || {}"
         @close="closePanel"
       >
@@ -563,6 +648,19 @@ watch(measurementData, (newVal) => {
           <WaterTemperatureChart
             v-if="selectedItem && activeLayerType === 'waterTemperature'"
             :data="selectedItem"
+          />
+
+          <BerthInfo
+            v-if="selectedItem && activeLayerType === 'berth'"
+            :record="selectedItem"
+          />
+          <LockInfo
+            v-if="selectedItem && activeLayerType === 'lock'"
+            :record="selectedItem"
+          />
+          <BridgeInfo
+            v-if="selectedItem && activeLayerType === 'bridge'"
+            :record="selectedItem"
           />
         </template>
 
