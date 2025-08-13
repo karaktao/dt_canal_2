@@ -25,6 +25,9 @@ const LayerLock = defineAsyncComponent(() =>
 const LayerBridge = defineAsyncComponent(() =>
   import("@/components/dashboard/LayerBridge.vue")
 );
+const LayerVessel = defineAsyncComponent(() =>
+  import("@/components/dashboard/LayerVessel.vue")
+);
 const BerthInfo = defineAsyncComponent(() =>
   import("@/components/dashboard/LayerBerthInfo.vue")
 );
@@ -33,6 +36,9 @@ const LockInfo = defineAsyncComponent(() =>
 );
 const BridgeInfo = defineAsyncComponent(() =>
   import("@/components/dashboard/LayerBridgeInfo.vue")
+);
+const VesselInfo = defineAsyncComponent(() =>
+  import("@/components/dashboard/LayerVesselInfo.vue")
 );
 const WaterLevel = defineAsyncComponent(() =>
   import("@/components/dashboard/waterlevel.vue")
@@ -107,6 +113,7 @@ const measurementData = ref(null); // 测量数据
 const berthRef = ref(null);
 const lockref = ref(null);
 const bridgeref = ref(null);
+const vesselRef = ref(null);
 
 // --------- 通用信息面板 ---------
 // 关闭面板时，清空选中要素
@@ -206,7 +213,7 @@ watch(
   () => waterLevelRef.value,
   async (val) => {
     if (val && selectedItems.value.includes("waterLevel")) {
-      console.log("🟢 waterLevelRef 已就绪，绑定 map 事件");
+      // console.log("🟢 waterLevelRef 已就绪，绑定 map 事件");
       // await nextTick(); // 等待 DOM 更新完成
       // val.attachMapEvents(map.value);
     }
@@ -217,7 +224,7 @@ watch(
   () => waterDischargeRef.value,
   async (val) => {
     if (val && selectedItems.value.includes("discharge")) {
-      console.log("🟢 waterDischargeRef 已就绪，绑定 map 事件");
+      // console.log("🟢 waterDischargeRef 已就绪，绑定 map 事件");
       // await nextTick(); // 等待 DOM 更新完成
       // val.attachMapEvents(map.value);
     }
@@ -228,7 +235,7 @@ watch(
   () => waterTemperatureRef.value,
   async (val) => {
     if (val && selectedItems.value.includes("temperature")) {
-      console.log("🟢 waterTemperatureRef 已就绪，绑定 map 事件");
+      // console.log("🟢 waterTemperatureRef 已就绪，绑定 map 事件");
       // await nextTick(); // 等待 DOM 更新完成
       // val.attachMapEvents(map.value);
     }
@@ -240,7 +247,7 @@ watch(
   () => berthRef.value,
   async (val) => {
     if (val && selectedItems.value.includes("berth")) {
-      console.log("🟢 berthRef 已就绪，绑定 map 事件");
+      // console.log("🟢 berthRef 已就绪，绑定 map 事件");
       await nextTick(); // 等待 DOM 更新完成
       val.attachMapEvents(map.value);
     }
@@ -251,7 +258,7 @@ watch(
   () => lockref.value,
   async (val) => {
     if (val && selectedItems.value.includes("lock")) {
-      console.log("🟢 lockRef 已就绪，绑定 map 事件");
+      // console.log("🟢 lockRef 已就绪，绑定 map 事件");
       await nextTick(); // 等待 DOM 更新完成
       val.attachMapEvents(map.value);
     }
@@ -262,12 +269,23 @@ watch(
   () => bridgeref.value,
   async (val) => {
     if (val && selectedItems.value.includes("bridge")) {
-      console.log("🟢 bridgeRef 已就绪，绑定 map 事件");
+      // console.log("🟢 bridgeRef 已就绪，绑定 map 事件");
       await nextTick(); // 等待 DOM 更新完成
       val.attachMapEvents(map.value);
     }
   }
 );
+
+  watch(
+    () => vesselRef.value,
+    async (val) => {
+      if (val && selectedItems.value.includes("vessel")) {
+        // console.log("🟢 vesselRef 已就绪，绑定 map 事件");
+        await nextTick(); // 等待 DOM 更新完成
+        val.attachMapEvents(map.value);
+      }
+    }
+  );
 
 // 监听 checkbox 勾选变化
 watch(selectedItems, (newVal, oldVal) => {
@@ -348,6 +366,20 @@ watch(selectedItems, (newVal, oldVal) => {
     unregisterLayer("bridge");
   }
 
+  // ✅ 注册 vessel 图层
+  // 勾选 vessel 时，如果组件实例已准备好则直接绑定并注册；
+  // 若尚未加载完成，则在上面的 vesselRef watcher 中处理
+  if (newVal.includes("vessel") && !oldVal.includes("vessel")) {
+    if (vesselRef.value) {
+      vesselRef.value.attachMapEvents(map.value);
+      registerLayer(vesselRef.value.getLayer?.());
+    }
+  }
+  // 取消勾选时卸载
+  if (!newVal.includes("vessel") && oldVal.includes("vessel")) {
+    unregisterLayer("vessel");
+  }
+
   // 存储勾选的图层设置
   localStorage.setItem("selectedItems", JSON.stringify(newVal));
 });
@@ -372,7 +404,7 @@ const categories = [
     ],
   },
   {
-    name: "Ship",
+    name: "Logistics",
     options: [
       { label: "Vessel", value: "vessel" },
       { label: "Logistics", value: "logistics" },
@@ -444,6 +476,7 @@ onMounted(() => {
             "berth",
             "lock",
             "bridge",
+            "vessel",
           ].includes(layerName)
         ) {
           hit = true;
@@ -464,7 +497,7 @@ onMounted(() => {
         if (!feature || !layer) return;
         const layerName = layer.get("name");
 
-        if (layerName === "berth" || layerName === "lock" || layerName === "bridge") {
+        if (layerName === "berth" || layerName === "lock" || layerName === "bridge" || layerName === "vessel") {
           // 👇 LayerBerth 在 feature 上放了完整对象：feature.set('data', item)
           //    并且图层名设为了 'berth'
           const data = feature.get("data");
@@ -555,6 +588,14 @@ onMounted(() => {
           :is="LayerBridge"
           v-if="selectedItems.includes('bridge')"
           ref="bridgeref"
+          @map-layer-ready="registerLayer"
+          @feature-clicked="handleFeatureClick"
+        />
+
+        <component
+          :is="LayerVessel"
+          v-if="selectedItems.includes('vessel')"
+          ref="vesselRef"
           @map-layer-ready="registerLayer"
           @feature-clicked="handleFeatureClick"
         />
@@ -661,6 +702,10 @@ onMounted(() => {
           <BridgeInfo
             v-if="selectedItem && activeLayerType === 'bridge'"
             :record="selectedItem"
+          />
+          <VesselInfo
+            v-if="selectedItem && activeLayerType === 'vessel'"
+            :record="selectedItem"            
           />
         </template>
 

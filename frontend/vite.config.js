@@ -77,9 +77,23 @@ export default defineConfig(({ mode, command }) => {
           target: 'https://v14.rws.nl',
           changeOrigin: true,
           rewrite: path => path.replace(/^\/api\/v14rws/, '')
-        }
+        },
 
+        // 1) 更具体的 section 路由，必须优先匹配
+        '^/api/vessels/section': {
+          target: 'https://www.eurisportal.eu',
+          changeOrigin: true,
+          secure: false, // 如无 TLS 问题可去掉或设 true
+          rewrite: (path) =>
+            path.replace(/^\/api\/vessels\/section/, '/visuris/api/TracksV2/GetTracksBySection'),
+        },
 
+        // 2) 通用 vessels 路由（保留原来的 BBoxV2 重写）
+        '/api/vessels': {
+          target: 'https://www.eurisportal.eu',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/vessels/, '/visuris/api/TracksV2/GetTracksByBBoxV2')
+        },
 
 
 
