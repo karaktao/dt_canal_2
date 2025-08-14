@@ -1,0 +1,9 @@
+<!--?xml version="1.0" encoding="utf-8"?-->
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-label="Passing">
+  <circle cx="24" cy="24" r="22" fill="#60a5fa"></circle>
+  <g fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 两个相对箭头表示通过/让行 -->
+    <path d="M12 27 L18 21 L18 24 L30 24 L30 21 L36 27"></path>
+    <path d="M12 21 L18 27 L18 24 L30 24 L30 27 L36 21" opacity="0.9"></path>
+  </g>
+</svg>

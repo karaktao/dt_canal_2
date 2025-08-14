@@ -1,16 +1,16 @@
-<!--?xml version="1.0" encoding="utf-8"?-->
-<!-- ship-arrow.svg - 指向“上方（北）”的简洁箭头船首图标 -->
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="ship">
-  <title>Ship Arrow</title>
-  <g transform="translate(0,0)">
-    <!-- 外轮廓（用于白色描边的对比） -->
-    <path d="M32 2 L42 22 L34 22 L34 46 L30 46 L30 22 L22 22 Z" fill="#00000000"></path>
-    <!-- 主体（箭头） -->
-    <path d="M32 4 L44 26 L36 26 L36 48 L28 48 L28 26 L20 26 Z" fill="#111111"></path>
-    <!-- 中心块（会被 Icon 的 fill 覆盖不了，因为 OL Icon 使用 src 图像原色） -->
-    <!-- 我们将使用 CSS/替换 SVG 填色并不会直接生效，因此在代码中以 tint 的方式不太可行。
-         所以我们在代码中根据状态使用 icon（SVG 本身是黑色），再通过 ol/style 填充颜色无法直接替换 svg 内填色。
-         为简单起见，SVG 使用黑色轮廓，样式颜色通过图标外层不变更（但我们通过 icon 的 scale 与 stroke 来突出） -->
-    <circle cx="32" cy="52" r="4" fill="#111111"></circle>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- 灰到白的渐变 -->
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e6e6e6;stop-opacity:1"></stop>
+      <stop offset="100%" style="stop-color:#cccccc;stop-opacity:1"></stop>
+    </linearGradient>
+  </defs>
+  
+  <!-- 倒角箭头 -->
+  <path d="M16 3 
+           L20 19 
+           L16 15 
+           L12 19 
+           Z" fill="url(#grad)" stroke="#000000" stroke-width="0.5" stroke-linejoin="round" stroke-linecap="round"></path>
 </svg>

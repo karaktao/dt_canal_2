@@ -95,7 +95,12 @@ export default defineConfig(({ mode, command }) => {
           rewrite: (path) => path.replace(/^\/api\/vessels/, '/visuris/api/TracksV2/GetTracksByBBoxV2')
         },
 
-
+        '/api/nts40': {
+          target: 'https://www.vaarweginformatie.nl',
+          changeOrigin: true,
+          secure: true, // 若目标证书有问题可改成 false（仅在 dev 环境）
+          rewrite: (path) => path.replace(/^\/api\/nts40/, '/fdd/nts40'),
+        },
 
 
 

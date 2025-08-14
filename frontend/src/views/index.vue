@@ -49,6 +49,12 @@ const WaterDischarge = defineAsyncComponent(() =>
 const WaterTemperature = defineAsyncComponent(() =>
   import("@/components/dashboard/waterTemperature.vue")
 );
+const LayerNotice = defineAsyncComponent(() =>
+  import("@/components/dashboard/LayerNotice.vue")
+);
+const NoticeInfo = defineAsyncComponent(() =>
+  import("@/components/dashboard/LayerNoticeInfo.vue")
+);
 
 import WaterLevelChart from "@/components/dashboard/WaterLevelChart.vue";
 import WaterDischargeChart from "@/components/dashboard/waterDischargeChart.vue";
@@ -67,6 +73,7 @@ import Zoom from "ol/control/Zoom";
 import proj4 from "proj4";
 import { register } from "ol/proj/proj4";
 import { get as getProjection } from "ol/proj";
+
 
 const InfoA = defineAsyncComponent(() =>
   import("@/components/dashboard/InfoA.vue")
@@ -114,6 +121,7 @@ const berthRef = ref(null);
 const lockref = ref(null);
 const bridgeref = ref(null);
 const vesselRef = ref(null);
+const noticeRef = ref(null); // Notice 图层组件引用
 
 // --------- 通用信息面板 ---------
 // 关闭面板时，清空选中要素
@@ -276,16 +284,27 @@ watch(
   }
 );
 
-  watch(
-    () => vesselRef.value,
-    async (val) => {
-      if (val && selectedItems.value.includes("vessel")) {
-        // console.log("🟢 vesselRef 已就绪，绑定 map 事件");
-        await nextTick(); // 等待 DOM 更新完成
-        val.attachMapEvents(map.value);
-      }
+watch(
+  () => vesselRef.value,
+  async (val) => {
+    if (val && selectedItems.value.includes("vessel")) {
+      // console.log("🟢 vesselRef 已就绪，绑定 map 事件");
+      await nextTick(); // 等待 DOM 更新完成
+      val.attachMapEvents(map.value);
     }
-  );
+  }
+);
+
+watch(
+  () => noticeRef.value,
+  async (val) => {
+    if (val && selectedItems.value.includes("notice")) {
+      // console.log("🟢 noticeRef 已就绪，绑定 map 事件");
+      await nextTick(); // 等待 DOM 更新完成
+      val.attachMapEvents(map.value);
+    }
+  }
+);
 
 // 监听 checkbox 勾选变化
 watch(selectedItems, (newVal, oldVal) => {
@@ -380,6 +399,20 @@ watch(selectedItems, (newVal, oldVal) => {
     unregisterLayer("vessel");
   }
 
+  // ✅ 注册 notice 图层
+  // 勾选 notice 时，如果组件实例已准备好则直接绑定并注册；
+  // 若尚未加载完成，则在上面的 noticeRef watcher 中处理
+  if (newVal.includes("notice") && !oldVal.includes("notice")) {
+    if (noticeRef.value) {
+      noticeRef.value.attachMapEvents(map.value);
+      registerLayer(noticeRef.value.getLayer?.());
+    }
+  }
+  // 取消勾选时卸载
+  if (!newVal.includes("notice") && oldVal.includes("notice")) {
+    unregisterLayer("notice");
+  }
+
   // 存储勾选的图层设置
   localStorage.setItem("selectedItems", JSON.stringify(newVal));
 });
@@ -407,7 +440,7 @@ const categories = [
     name: "Logistics",
     options: [
       { label: "Vessel", value: "vessel" },
-      { label: "Logistics", value: "logistics" },
+      { label: "Notice to Skippers", value: "notice" },
     ],
   },
 ];
@@ -497,7 +530,13 @@ onMounted(() => {
         if (!feature || !layer) return;
         const layerName = layer.get("name");
 
-        if (layerName === "berth" || layerName === "lock" || layerName === "bridge" || layerName === "vessel") {
+        if (
+          layerName === "berth" ||
+          layerName === "lock" ||
+          layerName === "bridge" ||
+          layerName === "vessel" ||
+          layerName === "notice"
+        ) {
           // 👇 LayerBerth 在 feature 上放了完整对象：feature.set('data', item)
           //    并且图层名设为了 'berth'
           const data = feature.get("data");
@@ -600,6 +639,15 @@ onMounted(() => {
           @feature-clicked="handleFeatureClick"
         />
 
+        <component
+          :is="LayerNotice"
+          v-if="selectedItems.includes('notice')"
+          ref="noticeRef"
+          :fallbackToCenter="true"
+          @map-layer-ready="registerLayer"
+          @feature-clicked="handleFeatureClick"
+        />
+
         <!-- 图层切换按钮组 -->
         <div class="btn-group">
           <el-button size="small" @click="toggleLayer('street')"
@@ -667,7 +715,6 @@ onMounted(() => {
           selectedItem
             ? selectedItem.name ||
               selectedItem.berthName ||
-
               selectedItem.locNaam ||
               ''
             : ''
@@ -705,7 +752,13 @@ onMounted(() => {
           />
           <VesselInfo
             v-if="selectedItem && activeLayerType === 'vessel'"
-            :record="selectedItem"            
+            :record="selectedItem"
+          />
+          <NoticeInfo
+            v-if="selectedItem && activeLayerType === 'notice'"
+            :record="selectedItem"
+            @locate="onLocateNotice"
+            @subscribe="onSubscribeNotice"
           />
         </template>
 

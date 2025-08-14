@@ -65,7 +65,7 @@ function createStyle({ shape, color, rotationRad, rotationQuant, labelText }) {
   if (shape === "icon") {
     const icon = new Icon({
       src: "/icons/ship-arrow.svg",
-      scale: 0.7,
+      scale: 1.2,
       rotation: rotationRad,
       rotateWithView: true,
       anchor: [0.5, 0.5],

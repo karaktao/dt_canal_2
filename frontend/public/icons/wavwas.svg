@@ -1,0 +1,10 @@
+<!--?xml version="1.0" encoding="utf-8"?-->
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-label="Wave wash">
+  <circle cx="24" cy="24" r="22" fill="#3b82f6"></circle>
+  <g fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 三条波纹 -->
+    <path d="M8 30 C12 26 16 26 20 30 C24 34 28 34 32 30 C36 26 40 26 44 30"></path>
+    <path d="M8 24 C12 20 16 20 20 24 C24 28 28 28 32 24 C36 20 40 20 44 24" opacity="0.7"></path>
+    <path d="M8 18 C12 14 16 14 20 18 C24 22 28 22 32 18 C36 14 40 14 44 18" opacity="0.5"></path>
+  </g>
+</svg>

@@ -1,0 +1,12 @@
+<!--?xml version="1.0" encoding="UTF-8"?-->
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-label="service icon">
+  <circle cx="24" cy="24" r="22" fill="#10b981"></circle>
+  <!-- 扳手 + 勾 -->
+  <g fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 扳手柄与头 -->
+    <path d="M18 30 L23 25"></path>
+    <path d="M23 25 L20 22 C21 20.5 23 19.8 25 20.2 C27 20.6 28.5 22.5 28 24.5 C27.7 25.6 27 26.4 26 27"></path>
+    <!-- 勾 -->
+    <path d="M30 30 L33 33 L38 26" stroke-width="2.2"></path>
+  </g>
+</svg>
