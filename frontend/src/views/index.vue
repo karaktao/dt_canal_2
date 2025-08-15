@@ -12,6 +12,7 @@ import {
   nextTick,
   onBeforeUnmount,
 } from "vue";
+import { ref as _ref } from "vue";
 import { ElButton, ElButtonGroup, ElCard, ElDivider } from "element-plus";
 
 // 异步加载 WaterLevel 组件
@@ -55,6 +56,9 @@ const LayerNotice = defineAsyncComponent(() =>
 const NoticeInfo = defineAsyncComponent(() =>
   import("@/components/dashboard/LayerNoticeInfo.vue")
 );
+const LayerWind = defineAsyncComponent(() =>
+  import("@/components/dashboard/LayerWind.vue")
+);
 
 import WaterLevelChart from "@/components/dashboard/WaterLevelChart.vue";
 import WaterDischargeChart from "@/components/dashboard/waterDischargeChart.vue";
@@ -73,7 +77,6 @@ import Zoom from "ol/control/Zoom";
 import proj4 from "proj4";
 import { register } from "ol/proj/proj4";
 import { get as getProjection } from "ol/proj";
-
 
 const InfoA = defineAsyncComponent(() =>
   import("@/components/dashboard/InfoA.vue")
@@ -122,6 +125,16 @@ const lockref = ref(null);
 const bridgeref = ref(null);
 const vesselRef = ref(null);
 const noticeRef = ref(null); // Notice 图层组件引用
+
+// ---------- 新增：跨组件共享状态（index.vue） ----------
+const selectedCoordinates = ref(null); // [x, y] EPSG:25831 或 null
+const location = ref(""); // 来自 infoE 的 text
+const geoFeatures = ref([]); // infoE 加载后的 features 列表
+
+function onWaterpointsLoaded(features) {
+  // 将 infoE 初始化的 features 保存到根组件，以便转给 infoA/InfoWeather 使用
+  geoFeatures.value = Array.isArray(features) ? features : [];
+}
 
 // --------- 通用信息面板 ---------
 // 关闭面板时，清空选中要素
@@ -190,7 +203,7 @@ function toggleLayer(type) {
 
 // 地图初始化完成时触发
 function onMapReady(map) {
-  console.log("🗺️ 地图已准备好：", map);
+  // console.log("🗺️ 地图已准备好：", map);
   // 公共交互可放这里
 }
 
@@ -200,10 +213,10 @@ function registerLayer(layer) {
     return;
   }
 
-  console.log("📌 尝试注册图层：", layer);
+  // console.log("📌 尝试注册图层：", layer);
   if (!layers.value.includes(layer)) {
     layers.value.push(layer);
-    console.log("✅ 图层已加入 layers.value");
+    // console.log("✅ 图层已加入 layers.value");
     map.value.addLayer(layer);
   }
 }
@@ -441,6 +454,7 @@ const categories = [
     options: [
       { label: "Vessel", value: "vessel" },
       { label: "Notice to Skippers", value: "notice" },
+      { label: "Wind", value: "wind" },
     ],
   },
 ];
@@ -488,7 +502,7 @@ function handleMeasurementLoaded(data) {
   measurementData.value = data;
 }
 watch(measurementData, (newVal) => {
-  console.log("📊 measurementData 已更新", newVal);
+  // console.log("📊 measurementData 已更新", newVal);
 });
 
 // 水信息图层点击事件
@@ -648,6 +662,12 @@ onMounted(() => {
           @feature-clicked="handleFeatureClick"
         />
 
+        <component
+          :is="LayerWind"
+          v-if="selectedItems.includes('wind')"
+          @map-layer-ready="registerLayer"
+        />
+
         <!-- 图层切换按钮组 -->
         <div class="btn-group">
           <el-button size="small" @click="toggleLayer('street')"
@@ -694,7 +714,12 @@ onMounted(() => {
 
       <!-- 左侧两块 -->
       <div class="overlay left">
-        <component :is="InfoA" />
+        <component
+          :is="InfoA"
+          :selectedCoordinates="selectedCoordinates"
+          :location="location"
+          :geoFeatures="geoFeatures"
+        />
         <component :is="InfoB" />
       </div>
 
@@ -704,9 +729,14 @@ onMounted(() => {
         <component :is="InfoD" />
       </div>
 
-      <!-- 底部一排 -->
+      <!-- 底部一排 -->`
       <div class="overlay bottom">
-        <component :is="InfoE" />
+        <component
+          :is="InfoE"
+          v-model:selectedCoordinates="selectedCoordinates"
+          v-model:location="location"
+          @waterpoints-loaded="onWaterpointsLoaded"
+        />
       </div>
 
       <InfoPanel

@@ -53,7 +53,7 @@ const pageSize = 200;
   for (const res of results) {
     allRows.push(...res.rows);
   }
-  console.log("✅ 全部泊位数据获取完成，共：", allRows.length);
+  // console.log("✅ 全部泊位数据获取完成，共：", allRows.length);
 
   // 解析 GeoJSON 并创建 Feature
   for (const item of allRows) {

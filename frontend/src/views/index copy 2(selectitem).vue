@@ -153,7 +153,7 @@ function toggleLayer(type) {
 
 // 地图初始化完成时触发
 function onMapReady(map) {
-  console.log("🗺️ 地图已准备好：", map);
+  // console.log("🗺️ 地图已准备好：", map);
   // 公共交互可放这里
 }
 
@@ -163,10 +163,10 @@ function registerLayer(layer) {
     return;
   }
 
-  console.log("📌 尝试注册图层：", layer);
+  // console.log("📌 尝试注册图层：", layer);
   if (!layers.value.includes(layer)) {
     layers.value.push(layer);
-    console.log("✅ 图层已加入 layers.value");
+    // console.log("✅ 图层已加入 layers.value");
     map.value.addLayer(layer);
   }
 }
@@ -184,7 +184,7 @@ watch(
   () => waterLevelRef.value,
   async (val) => {
     if (val && selectedItems.value.includes("waterLevel")) {
-      console.log("🟢 waterLevelRef 已就绪，绑定 map 事件");
+      // console.log("🟢 waterLevelRef 已就绪，绑定 map 事件");
       await nextTick(); // 等待 DOM 更新完成
       val.attachMapEvents(map.value);
     }
@@ -196,7 +196,7 @@ watch(
   () => berthRef.value,
   async (val) => {
     if (val && selectedItems.value.includes("berth")) {
-      console.log("🟢 berthRef 已就绪，绑定 map 事件");
+      // console.log("🟢 berthRef 已就绪，绑定 map 事件");
       await nextTick(); // 等待 DOM 更新完成
       val.attachMapEvents(map.value);
     }
@@ -207,7 +207,7 @@ watch(
   () => lockref.value,
   async (val) => {
     if (val && selectedItems.value.includes("lock")) {
-      console.log("🟢 lockRef 已就绪，绑定 map 事件");
+      // console.log("🟢 lockRef 已就绪，绑定 map 事件");
       await nextTick(); // 等待 DOM 更新完成
       val.attachMapEvents(map.value);
     }
@@ -218,7 +218,7 @@ watch(
   () => bridgeref.value,
   async (val) => {
     if (val && selectedItems.value.includes("bridge")) {
-      console.log("🟢 bridgeRef 已就绪，绑定 map 事件");
+      // console.log("🟢 bridgeRef 已就绪，绑定 map 事件");
       await nextTick(); // 等待 DOM 更新完成
       val.attachMapEvents(map.value);
     }
@@ -363,7 +363,7 @@ function handleMeasurementLoaded(data) {
   measurementData.value = data;
 }
 watch(measurementData, (newVal) => {
-  console.log("📊 measurementData 已更新", newVal);
+  // console.log("📊 measurementData 已更新", newVal);
 });
 </script>
 

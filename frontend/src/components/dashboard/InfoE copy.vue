@@ -51,10 +51,6 @@
 <script>
 
 
-
-
-
-
 import axios from "axios";
 const TRUNCATE_LEN = 2000; // 控制在 debug 中打印多少字符 / 元素
 
@@ -74,11 +70,6 @@ export default {
       debugResponses: {}, // { [sectionCode]: { ok, status, contentType, responseURL, dataType, dataSnippet } }
     };
   },
-
-
-
-
-
 
 
 
@@ -235,11 +226,6 @@ export default {
     },
   },
 };
-
-
-
-
-
 
 
 

@@ -437,7 +437,7 @@ async function doFetchAndRender(map) {
     if (features.length) noticeSource.addFeatures(features);
 
     emit("map-layer-ready", noticeLayer);
-    console.log("LayerNotice: 添加 features:", features.length);
+    // console.log("LayerNotice: 添加 features:", features.length);
   } catch (err) {
     console.error("LayerNotice: 请求或解析出错", err);
     emit("fetch-error", err);

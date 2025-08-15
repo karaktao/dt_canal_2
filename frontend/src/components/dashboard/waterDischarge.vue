@@ -85,7 +85,7 @@ function attachMapEvents(map) {
 
 
 onMounted(async () => {
-  console.log("📌 waterDischarge - 使用 RWS API 加载");
+  // console.log("📌 waterDischarge - 使用 RWS API 加载");
 
   try {
     const response = await fetch(
@@ -94,7 +94,7 @@ onMounted(async () => {
     const geojson = await response.json();
 
     if (!geojson.features || !Array.isArray(geojson.features)) {
-      console.error("❌ 无效数据格式", geojson);
+      console.error("❌ waterDischarge 无效数据格式", geojson);
       return;
     }
 
@@ -149,9 +149,9 @@ onMounted(async () => {
     waterDischargeLayer.set("name", "waterDischarge");
     emit("map-layer-ready", waterDischargeLayer);
 
-    console.log("✅ 加载完成，总点数：", waterDischargeSource.getFeatures().length);
+    // console.log("✅ 加载完成，总点数：", waterDischargeSource.getFeatures().length);
   } catch (err) {
-    console.error("❌ 获取水位信息失败", err);
+    console.error("❌ waterDischarge 获取水位信息失败", err);
   }
 });
 

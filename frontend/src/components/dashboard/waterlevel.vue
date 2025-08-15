@@ -80,7 +80,7 @@ function attachMapEvents(map) {
 }
 
 onMounted(async () => {
-  console.log("📌 WaterLevel - 使用 RWS API 加载");
+  // console.log("📌 WaterLevel - 使用 RWS API 加载");
 
   try {
     const response = await fetch(
@@ -89,7 +89,7 @@ onMounted(async () => {
     const geojson = await response.json();
 
     if (!geojson.features || !Array.isArray(geojson.features)) {
-      console.error("❌ 无效数据格式", geojson);
+      console.error("❌ WaterLevel 无效数据格式", geojson);
       return;
     }
 
@@ -143,9 +143,9 @@ onMounted(async () => {
     waterLevelLayer.set("name", "waterLevel");
     emit("map-layer-ready", waterLevelLayer);
 
-    console.log("✅ 加载完成，总点数：", waterLevelSource.getFeatures().length);
+    // console.log("✅ 加载完成，总点数：", waterLevelSource.getFeatures().length);
   } catch (err) {
-    console.error("❌ 获取水位信息失败", err);
+    console.error("❌ WaterLevel 获取水位信息失败", err);
   }
 });
 
