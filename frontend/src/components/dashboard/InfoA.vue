@@ -1,65 +1,65 @@
 <template>
   <div class="info-panel">
-    
+    <div class="section-header">
+      <span class="title">Weather</span>
+    </div>
     <InfoWeather
       class="panel top"
       :data="weatherData"
-      :selectedCoordinates="props.selectedCoordinates"
-      :location="props.location"
-      :geoFeatures="props.geoFeatures"
-      @refresh="onWeatherRefresh"
+      :selectedCoordinates="selectedCoordinates"
+      :location="location"
+      :geoFeatures="geoFeatures"
+      @refresh="handleWeatherRefresh"
     />
+    <div class="section-header">
+      <span class="title">Water Level</span>
+    </div>
     <InfoWaterLevel
       class="panel bottom"
       :data="waterLevelData"
-      @refresh="onWaterRefresh"
+      @refresh="handleWaterRefresh"
     />
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { toRefs } from "vue";
 import InfoWeather from "./InfoWeather.vue";
 import InfoWaterLevel from "./InfoWaterLevel.vue";
 
-// 新增：接收来自 index.vue 的共享 state
+// 接收来自 index.vue 的共享 state + 可能的回调和数据
 const props = defineProps({
   selectedCoordinates: { type: [Array, null], default: null },
   location: { type: String, default: "" },
   geoFeatures: { type: Array, default: () => [] },
+
+  // 新增：外部传入的 weather / water 数据（给默认值避免 undefined）
+  weatherData: { type: Object, default: () => ({}) },
+  waterLevelData: { type: Object, default: () => ({}) },
+
+  // 新增：可选的刷新回调（父组件可以传入函数），默认为 null
+  onWeatherRefresh: { type: Function, default: null },
+  onWaterRefresh: { type: Function, default: null },
 });
 
-// 示例数据（真实项目中从 API / store 获取）
-const weatherData = ref({
-  temp: "18°C",
-  windSpeed: "5 m/s",
-  visibility: "10 km",
-  forecast: [], // 可传数组用于图表
-});
+// 解构成 refs，方便模板直接使用（模板会自动解包 ref）
+const { selectedCoordinates, location, geoFeatures, weatherData, waterLevelData } = toRefs(props);
 
-const waterLevelData = ref({
-  level: "0.45 m",
-  trend: "rising",
-  history: [], // 可传数组用于图表
-});
-
-function onWeatherRefresh() {
-  // 父组件接收到子组件的刷新事件可以在这里处理（例如重新请求数据）
-  console.log("weather refresh requested");
-  // 模拟更新
-  weatherData.value.temp = "19°C";
+// 包装函数：当 InfoWeather 或 InfoWaterLevel 发出 refresh 事件时调用
+function handleWeatherRefresh(...args) {
+  // 如果父组件传入了回调则调用
+  props.onWeatherRefresh?.(...args);
 }
 
-function onWaterRefresh() {
-  console.log("water-level refresh requested");
-  waterLevelData.value.level = "0.48 m";
+function handleWaterRefresh(...args) {
+  props.onWaterRefresh?.(...args);
 }
 </script>
 
 <style scoped>
 .info-panel {
-  width: 400px; /* 和你原来一致 */
-  height: 500px; /* 总高度 */
+  width: 400px;
+  height: 800px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -67,10 +67,9 @@ function onWaterRefresh() {
   box-sizing: border-box;
 }
 
-/* 两个子面板各自占一半高度，可按需改成比例或固定高度 */
 .panel {
   flex: 1 1 0;
-  min-height: 0; /* 允许内部滚动 */
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }

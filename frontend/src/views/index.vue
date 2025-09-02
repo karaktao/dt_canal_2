@@ -81,9 +81,9 @@ import { get as getProjection } from "ol/proj";
 const InfoA = defineAsyncComponent(() =>
   import("@/components/dashboard/InfoA.vue")
 );
-const InfoB = defineAsyncComponent(() =>
-  import("@/components/dashboard/InfoB.vue")
-);
+// const InfoB = defineAsyncComponent(() =>
+//   import("@/components/dashboard/InfoB.vue")
+// );
 const InfoC = defineAsyncComponent(() =>
   import("@/components/dashboard/InfoC.vue")
 );
@@ -720,7 +720,7 @@ onMounted(() => {
           :location="location"
           :geoFeatures="geoFeatures"
         />
-        <component :is="InfoB" />
+        <!-- <component :is="InfoB" /> -->
       </div>
 
       <!-- 右侧两块 -->

@@ -48,6 +48,9 @@ import { createPinia } from 'pinia'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import '@/assets/less/index.less' // 如果你有地图相关样式
 
+
+
+
 const app = createApp(App)
 const pinia = createPinia()
 
