@@ -1,59 +1,12 @@
-<template>
-  <div class="weather-bar" role="region" aria-label="Weather summary">
-    <div class="wb-items">
-      <!-- Temperature (使用 Weather Icons via CDN) -->
-      <div class="wb-item">
-        <div class="icon-wrap" aria-hidden="true">
-          <i :class="thermIconClass" aria-hidden="true"></i>
-        </div>
-        <div class="val">
-          <div class="main">{{ tempCDisplay }}</div>
-          <div class="sub">{{ tempFDisplay }}</div>
-        </div>
-      </div>
-
-      <!-- Wind -->
-      <div class="wb-item">
-        <div class="icon-wrap" aria-hidden="true">
-          <i :class="windIconClass" aria-hidden="true"></i>
-        </div>
-        <div class="val">
-          <div class="main">{{ windKnDisplay }}</div>
-          <div class="sub">{{ windMsDisplay }}</div>
-        </div>
-      </div>
-
-      <!-- precipitation -->
-      <div class="wb-item">
-        <div class="icon-wrap" aria-hidden="true">
-          <i :class="precipIconClass" aria-hidden="true"></i>
-        </div>
-        <div class="val">
-          <div class="main">{{ precipitationDisplay }}</div>
-          <div class="sub">{{ humidityDisplay }}</div>
-        </div>
-      </div>
-
-      <!-- visibility -->
-      <div class="wb-item">
-        <div class="icon-wrap" aria-hidden="true">
-          <i :class="visibilityIconClass" aria-hidden="true"></i>
-        </div>
-        <div class="val">
-          <div class="main">{{ visibilityDisplay }}</div>
-          <div class="sub">{{ weatherCodeLabel }}</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup>
+const emit = defineEmits(["refresh"]);
+
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
 import proj4 from "proj4";
 import { register } from "ol/proj/proj4";
 import { transform } from "ol/proj";
+import * as echarts from "echarts";
 
 /* ========== Props ========== */
 const props = defineProps({
@@ -61,7 +14,7 @@ const props = defineProps({
   location: { type: String, default: "" },
   geoFeatures: { type: Array, default: () => [] },
   data: { type: Object, default: () => ({}) },
-  pollIntervalMs: { type: Number, default: 60 * 1000 }
+  pollIntervalMs: { type: Number, default: 60 * 1000 },
 });
 
 /* ========== State ========== */
@@ -78,6 +31,8 @@ const tempC = ref(null);
 const windMs = ref(null);
 const windKn = ref(null);
 const precipitation = ref(null);
+const windGustMs = ref(null);
+const windDir = ref(null);
 const humidity = ref(null);
 const visibility = ref(null);
 const weatherCode = ref(null);
@@ -98,11 +53,17 @@ registerProjs();
 
 /* ---------- coord helpers (unchanged) ---------- */
 function findCoordsFromLocation(name) {
-  if (!name || !Array.isArray(props.geoFeatures) || props.geoFeatures.length === 0)
+  if (
+    !name ||
+    !Array.isArray(props.geoFeatures) ||
+    props.geoFeatures.length === 0
+  )
     return null;
   const key = String(name).trim().toLowerCase();
   for (const f of props.geoFeatures) {
-    const fname = String(f?.properties?.name ?? "").trim().toLowerCase();
+    const fname = String(f?.properties?.name ?? "")
+      .trim()
+      .toLowerCase();
     if (fname === key) {
       return f?.geometry?.coordinates ?? null;
     }
@@ -185,7 +146,7 @@ async function fetchWeatherForCoordinates(coords) {
     const [curRes, hourlyRes, dailyRes] = await Promise.all([
       axios.get(currentUrl).catch((e) => ({ data: null, error: e })),
       axios.get(hourlyUrl).catch((e) => ({ data: null, error: e })),
-      axios.get(dailyUrl).catch((e) => ({ data: null, error: e }))
+      axios.get(dailyUrl).catch((e) => ({ data: null, error: e })),
     ]);
 
     const curData = curRes?.data ?? null;
@@ -193,7 +154,9 @@ async function fetchWeatherForCoordinates(coords) {
     applyCurrentData(current);
 
     try {
-      const minRes = await axios.get(minutelyUrl).catch((e) => ({ data: null, error: e }));
+      const minRes = await axios
+        .get(minutelyUrl)
+        .catch((e) => ({ data: null, error: e }));
       const minData = minRes?.data ?? null;
       const minObj = minData?.minutely_15 ?? minData?.minutely ?? null;
       processMinutelyData(minObj);
@@ -220,6 +183,8 @@ function applyCurrentData(current) {
     tempC.value = null;
     windMs.value = null;
     windKn.value = null;
+    windDir.value = null;
+    windGustMs.value = null;
     precipitation.value = null;
     humidity.value = null;
     visibility.value = null;
@@ -228,41 +193,37 @@ function applyCurrentData(current) {
   }
 
   const temp =
-    current.temperature_2m ??
-    current.temperature ??
-    current.temp ??
-    null;
+    current.temperature_2m ?? current.temperature ?? current.temp ?? null;
   const wind =
-    current.wind_speed_10m ??
-    current.wind_speed ??
-    current.windspeed ??
+    current.wind_speed_10m ?? current.wind_speed ?? current.windspeed ?? null;
+  const gust =
+    current.wind_gusts_10m ?? current.wind_gust ?? current.gusts ?? null;
+  const dir =
+    current.wind_direction_10m ??
+    current.winddirection_10m ??
+    current.wind_dir ??
     null;
   const precip =
-    current.precipitation ??
-    current.rain ??
-    current.rain_1h ??
-    null;
+    current.precipitation ?? current.rain ?? current.rain_1h ?? null;
   const hum =
     current.relative_humidity_2m ??
     current.relativehumidity_2m ??
     current.humidity ??
     null;
-  const vis =
-    current.visibility ??
-    current.visibility_metres ??
-    null;
+  const vis = current.visibility ?? current.visibility_metres ?? null;
   const code =
-    current.weather_code ??
-    current.weathercode ??
-    current.code ??
-    null;
+    current.weather_code ?? current.weathercode ?? current.code ?? null;
 
   tempC.value = isFiniteNumber(temp) ? Number(temp) : null;
   windMs.value = isFiniteNumber(wind) ? Number(wind) : null;
   windKn.value = isFiniteNumber(wind) ? Number(wind) * 1.9438444924406 : null;
-  precipitation.value = isFiniteNumber(precip) ? Number(precip) : (precip ?? null);
-  humidity.value = isFiniteNumber(hum) ? Number(hum) : (hum ?? null);
-  visibility.value = isFiniteNumber(vis) ? Number(vis) : (vis ?? null);
+  windGustMs.value = isFiniteNumber(gust) ? Number(gust) : null;
+  windDir.value = isFiniteNumber(dir) ? Number(dir) : null;
+  precipitation.value = isFiniteNumber(precip)
+    ? Number(precip)
+    : precip ?? null;
+  humidity.value = isFiniteNumber(hum) ? Number(hum) : hum ?? null;
+  visibility.value = isFiniteNumber(vis) ? Number(vis) : vis ?? null;
   weatherCode.value = code ?? null;
 }
 
@@ -319,7 +280,7 @@ function processDailyData(daily) {
       "wind_direction_10m_dominant",
       "wind_speed_10m_max",
       "precipitation_sum",
-      "precipitation_probability_max"
+      "precipitation_probability_max",
     ];
     for (const k of maybe) {
       const arr = daily[k];
@@ -345,9 +306,22 @@ function applyEmpty() {
 
 /* resolve coordinates */
 function resolveCoordinatesSource() {
-  if (Array.isArray(props.selectedCoordinates) && props.selectedCoordinates.length >= 2) return props.selectedCoordinates;
-  if (props.data && Array.isArray(props.data.selectedCoordinates) && props.data.selectedCoordinates.length >= 2) return props.data.selectedCoordinates;
-  if (props.location && Array.isArray(props.geoFeatures) && props.geoFeatures.length) {
+  if (
+    Array.isArray(props.selectedCoordinates) &&
+    props.selectedCoordinates.length >= 2
+  )
+    return props.selectedCoordinates;
+  if (
+    props.data &&
+    Array.isArray(props.data.selectedCoordinates) &&
+    props.data.selectedCoordinates.length >= 2
+  )
+    return props.data.selectedCoordinates;
+  if (
+    props.location &&
+    Array.isArray(props.geoFeatures) &&
+    props.geoFeatures.length
+  ) {
     const found = findCoordsFromLocation(props.location);
     if (found && Array.isArray(found) && found.length >= 2) return found;
   }
@@ -385,17 +359,30 @@ onMounted(() => {
 onBeforeUnmount(() => {
   stopPolling();
 });
-watch(() => props.selectedCoordinates, (nv) => {
-  if (nv && Array.isArray(nv) && nv.length >= 2) doFetchOnce();
-}, { immediate: true });
-watch(() => props.location, (nv) => {
-  const direct = Array.isArray(props.selectedCoordinates) && props.selectedCoordinates.length >= 2;
-  const dataDirect = props.data && Array.isArray(props.data.selectedCoordinates) && props.data.selectedCoordinates.length >= 2;
-  if (direct || dataDirect) return;
-  if (!nv) return;
-  const coords = findCoordsFromLocation(nv);
-  if (coords) doFetchOnce();
-}, { immediate: true });
+watch(
+  () => props.selectedCoordinates,
+  (nv) => {
+    if (nv && Array.isArray(nv) && nv.length >= 2) doFetchOnce();
+  },
+  { immediate: true }
+);
+watch(
+  () => props.location,
+  (nv) => {
+    const direct =
+      Array.isArray(props.selectedCoordinates) &&
+      props.selectedCoordinates.length >= 2;
+    const dataDirect =
+      props.data &&
+      Array.isArray(props.data.selectedCoordinates) &&
+      props.data.selectedCoordinates.length >= 2;
+    if (direct || dataDirect) return;
+    if (!nv) return;
+    const coords = findCoordsFromLocation(nv);
+    if (coords) doFetchOnce();
+  },
+  { immediate: true }
+);
 
 /* ========== computed displays ========== */
 const tempCDisplay = computed(() => {
@@ -410,12 +397,40 @@ const tempFDisplay = computed(() => {
   return `${f} °F`;
 });
 const windKnDisplay = computed(() => {
-  const v = windKn.value ?? (isFiniteNumber(windMs.value) ? Number(windMs.value) * 1.9438444924406 : null);
-  return !isFiniteNumber(v) ? "N/A" : `${(Math.round(v * 10) / 10).toFixed(1)} kn`;
+  const v =
+    windKn.value ??
+    (isFiniteNumber(windMs.value)
+      ? Number(windMs.value) * 1.9438444924406
+      : null);
+  return !isFiniteNumber(v)
+    ? "N/A"
+    : `${(Math.round(v * 10) / 10).toFixed(1)} kn`;
 });
 const windMsDisplay = computed(() => {
-  const v = windMs.value ?? (isFiniteNumber(windKn.value) ? Number(windKn.value) / 1.9438444924406 : null);
-  return !isFiniteNumber(v) ? "" : `${(Math.round(v * 10) / 10).toFixed(1)} m/s`;
+  const v =
+    windMs.value ??
+    (isFiniteNumber(windKn.value)
+      ? Number(windKn.value) / 1.9438444924406
+      : null);
+  return !isFiniteNumber(v)
+    ? ""
+    : `${(Math.round(v * 10) / 10).toFixed(1)} m/s`;
+});
+/* 阵风显示：m/s */
+const windGustMsDisplay = computed(() => {
+  const v = windGustMs.value;
+  if (!isFiniteNumber(v)) return "";
+  const ms = Number(v);
+  // 保留1位小数，四舍五入
+  return `${(Math.round(ms * 10) / 10).toFixed(1)} m/s`;
+});
+
+/* 阵风显示：kn */
+const windGustKnDisplay = computed(() => {
+  const v = windGustMs.value;
+  if (!isFiniteNumber(v)) return "";
+  const kn = Number(v) * 1.9438444924406;
+  return `${(Math.round(kn * 10) / 10).toFixed(1)} kn`;
 });
 const precipitationDisplay = computed(() => {
   const v = precipitation.value;
@@ -436,6 +451,37 @@ const visibilityDisplay = computed(() => {
 });
 const weatherCodeLabel = computed(() => {
   return weatherCode.value == null ? "" : weatherCodeToLabel(weatherCode.value);
+});
+
+function degreesToCardinal(deg) {
+  if (!isFiniteNumber(deg)) return "";
+  const d = Number(deg);
+  const cards = [
+    "N",
+    "NNE",
+    "NE",
+    "ENE",
+    "E",
+    "ESE",
+    "SE",
+    "SSE",
+    "S",
+    "SSW",
+    "SW",
+    "WSW",
+    "W",
+    "WNW",
+    "NW",
+    "NNW",
+    "N",
+  ];
+  const idx = Math.round((d % 360) / 22.5);
+  return cards[idx];
+}
+const windDirDisplay = computed(() => {
+  const d = windDir.value;
+  if (!isFiniteNumber(d)) return "";
+  return `${Math.round(d)}° (${degreesToCardinal(d)})`;
 });
 
 /* ============================
@@ -485,84 +531,381 @@ const visibilityIconClass = computed(() => {
   if (n < 2000) return "wi wi-day-cloudy";
   return "wi wi-day-sunny";
 });
+
+/* ============================
+   折线图表
+   ============================ */
+const chartRef = ref(null);
+let chartInstance = null;
+
+function formatDateDDMM(dateStr) {
+  // 尝试解析 ISO 字符串（例如 "2025-09-09"）
+  const d = new Date(dateStr);
+  if (isNaN(d)) {
+    // 如果不是标准日期，直接返回原字符串（降级）
+    return String(dateStr ?? "");
+  }
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}-${mm}`;
+}
+
+/* 将 dailySummary 转成图表数据 */
+function buildWeeklyOption() {
+  const ds = Array.isArray(dailySummary.value) ? dailySummary.value : [];
+
+  const dates = ds.map((d) => formatDateDDMM(d?.date ?? d?.time ?? ""));
+
+  const precip = (dailySummary.value || []).map((d) => {
+    const v = d?.precipitation_sum ?? d?.precipitation ?? null;
+    return isFiniteNumber(v) ? Number(v) : null;
+  });
+
+  const windMax = (dailySummary.value || []).map((d) => {
+    const v = d?.wind_speed_10m_max ?? d?.wind_speed_max ?? null;
+    return isFiniteNumber(v) ? Number(v) : null;
+  });
+
+  return {
+    backgroundColor: "transparent",
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      textStyle: { fontSize: 10 },
+      formatter: (params) => {
+        // params 是数组，按 series 顺序
+        let out = params[0]?.axisValueLabel ?? "";
+        params.forEach((p) => {
+          out += `<br/>${p.marker} ${p.seriesName}: ${
+            p.value == null ? "N/A" : p.value
+          }`;
+          if (p.seriesName === "Wind (max)") out += " km/h";
+          if (p.seriesName === "Precipitation") out += " mm";
+        });
+        return out;
+      },
+    },
+    legend: {
+      data: ["Precipitation", "Wind (max)"],
+      top: 6,
+      left: "center",
+      textStyle: { fontSize: 11 },
+    },
+    grid: { left: 44, right: 44, top: 36, bottom: 20, height: 80 },
+    xAxis: [
+      {
+        type: "category",
+        data: dates,
+        boundaryGap: false,
+        axisLabel: {
+          formatter: (v) => v,
+          rotate: 0,
+          fontSize: 10,
+          color: "#6e7a7f",
+        },
+        axisLine: { lineStyle: { color: "#e6eef0" } },
+      },
+    ],
+    yAxis: [
+      {
+        type: "value",
+        name: "Precip (mm)",
+        position: "left",
+        offset: 10,
+        axisLabel: { formatter: "{value}" },
+        nameTextStyle: { fontSize: 10 },
+        splitLine: { lineStyle: { color: "#f3f7f8" } },
+      },
+      {
+        type: "value",
+        name: "Wind (km/h)",
+        position: "right",
+        offset: 10,
+        axisLabel: { formatter: "{value}" },
+        nameTextStyle: { fontSize: 10 },
+        splitLine: { show: false },
+      },
+    ],
+    series: [
+      {
+        name: "Precipitation",
+        type: "bar", // <- 改成柱状图
+        yAxisIndex: 0,
+        data: precip,
+        barMaxWidth: 25, // 柱宽，可调整
+        itemStyle: { opacity: 0.8 },
+        emphasis: { focus: "series" },
+      },
+      {
+        name: "Wind (max)",
+        type: "line",
+        smooth: true,
+        yAxisIndex: 1,
+        data: windMax,
+        showSymbol: true,
+        symbolSize: 5,
+        lineStyle: { width: 1.5 },
+      },
+    ],
+  };
+}
+
+/* 初始化 / 更新 / 销毁 图表 */
+function initChart() {
+  if (!chartRef.value) return;
+  chartInstance =
+    echarts.getInstanceByDom(chartRef.value) ?? echarts.init(chartRef.value);
+  const opt = buildWeeklyOption();
+  chartInstance.setOption(opt, { notMerge: true });
+}
+
+function resizeChart() {
+  try {
+    chartInstance?.resize();
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+/* 监听 dailySummary 变化并更新图表 */
+watch(
+  () => dailySummary.value,
+  (nv) => {
+    if (!chartInstance && chartRef.value) initChart();
+    if (chartInstance) {
+      const opt = buildWeeklyOption();
+      chartInstance.setOption(opt);
+      resizeChart();
+    }
+  },
+  { immediate: true, deep: true }
+);
+
+/* 挂载与卸载：创建图表并监听窗口 resize */
+onMounted(() => {
+  if (chartRef.value) initChart();
+  window.addEventListener("resize", resizeChart);
+});
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", resizeChart);
+  try {
+    chartInstance?.dispose();
+    chartInstance = null;
+  } catch (e) {}
+});
 </script>
 
+<template>
+  <div class="info-weather-root" v-bind="$attrs">
+    <div class="weather-card" role="region" aria-label="Weather summary">
+      <div class="left">
+        <div class="location" v-if="location">{{ location }}</div>
+        <div class="temp-block" aria-hidden="false">
+          <div class="temp-icon">
+            <i :class="thermIconClass" aria-hidden="true"></i>
+          </div>
+          <div class="temp-values">
+            <div class="temp-main">{{ tempCDisplay }}</div>
+            <div class="temp-sub">{{ tempFDisplay }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="right" role="list" aria-label="Other weather stats">
+        <!-- 右侧网格：两列，每列两项 -->
+        <div class="right-grid">
+          <div class="stat" role="listitem" aria-label="Windspeed">
+            <div class="stat-icon"><i :class="windIconClass"></i></div>
+            <div class="stat-body">
+              <div class="stat-label">Windspeed</div>
+              <div class="stat-main">{{ windKnDisplay }}</div>
+              <div class="stat-sub">{{ windDirDisplay }}</div>
+            </div>
+          </div>
+
+          <div class="stat" role="listitem" aria-label="Visibility">
+            <div class="stat-icon"><i :class="visibilityIconClass"></i></div>
+            <div class="stat-body">
+              <div class="stat-label">Visibility</div>
+              <div class="stat-main">{{ visibilityDisplay }}</div>
+              <div class="stat-sub">{{ weatherCodeLabel }}</div>
+            </div>
+          </div>
+
+          <div class="stat" role="listitem" aria-label="Windgust">
+            <div class="stat-icon"><i :class="windIconClass"></i></div>
+            <div class="stat-body">
+              <div class="stat-label">Windgust</div>
+              <div class="stat-main">{{ windGustKnDisplay }}</div>
+              <div class="stat-sub">{{ windGustMsDisplay }}</div>
+            </div>
+          </div>
+
+          <div class="stat" role="listitem" aria-label="Precipitation">
+            <div class="stat-icon"><i :class="precipIconClass"></i></div>
+            <div class="stat-body">
+              <div class="stat-label">Precipitation</div>
+              <div class="stat-main">{{ precipitationDisplay }}</div>
+              <div class="stat-sub">{{ humidityDisplay }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div ref="chartRef" class="weather-chart" aria-hidden="false"></div>
+  </div>
+</template>
+
+
 <style scoped>
-/* (保持你的 style，不变) */
-.weather-bar {
-  width: 500px;
-  border-radius: 6px;
-  overflow: hidden;
-  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
-  background: #ffffff;
-  border: 1px solid rgba(8, 20, 30, 0.06);
+/* 宽度固定为 400px，左右两列并排 */
+.weather-card {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  width: 450px !important;
+  box-sizing: border-box !important;
+  padding: 8px !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  margin-top: -8px !important;
+  border-radius: 8px !important;
+  /* background: #fff !important; */
+  overflow: visible !important;
+  outline: 1px dashed rgba(200, 80, 80, 0.08); /* 临时可视化边框，方便调试 */
 }
 
-.wb-items {
+
+
+/* 左侧区域 */
+.left {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 10px;
-  background: #fff;
+  flex-direction: column; /* 改为列方向，确保 location 在上 */
+  align-items: flex-start; /* 左对齐内容 */
+  padding: 5px 10px;
+  flex: 0 0 160px;
+  box-sizing: border-box;
+  /* background: linear-gradient(180deg, #f7fbfd 0, #ffffff 100%); */
+}
+.location {
+  font-size: 13px;
+  color: #7a9096;
+  margin-top: 4px;
+  margin-bottom: 25px;
 }
 
-/* each item */
-.wb-item {
+/* 温度块布局 */
+.temp-block {
   display: flex;
+  gap: 12px;
   align-items: center;
-  gap: 10px;
-  min-width: 0;
-  flex: 1 1 0;
 }
-
-/* icon container */
-.icon-wrap {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-/* Weather Icons 字体大小与颜色控制（确保你已在 index.html 引入 CDN） */
-.icon-wrap .wi {
-  font-size: 28px;
+.temp-icon .wi {
+  font-size: 45px;
+  color: #2f98c5;
   line-height: 1;
-  display: inline-block;
-  color: #2F98C5; /* 默认蓝色，可按需修改 */
 }
-
-/* value layout */
-.val {
+.temp-values {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+.temp-values .location {
+  font-size: 12px;
+  color: #4b5a5f;
+  margin-bottom: 6px;
+}
+.temp-main {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f2930;
   line-height: 1;
-  min-width: 0;
+  margin-top: 0px;
 }
-.val .main {
-  font-weight: 700;
-  font-size: 14px;
-  color: #152D33;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-.val .sub {
-  font-size: 11px;
-  color: #627D86;
-  margin-top: 2px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
+.temp-sub {
+  font-size: 15px;
+  color: #7a9096;
+  margin-top: 4px;
 }
 
-/* responsive */
-@media (max-width: 420px) {
-  .weather-bar { width: 100%; }
-  .val .main { font-size: 12px; }
-  .val .sub { font-size: 10px; }
+/* 右侧整体（占剩余宽度） */
+.right {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0px 0px;
+  flex: 1 1 auto;
+  box-sizing: border-box;
+}
+
+/* 右侧网格：两列布局 */
+.right-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 两列 */
+  gap: 6px 10px; /* row-gap 6px, column-gap 10px */
+  align-items: start;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 每个 stat 作为 grid 单元 */
+.stat {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 6px; /* 紧凑内边距 */
+  border-radius: 6px;
+  transition: background 0.12s ease, transform 0.08s ease;
+  background: transparent;
+}
+
+/* hover 效果可选 */
+.stat:hover,
+.stat:focus-within {
+  background: rgba(47, 152, 197, 0.03);
+  transform: translateY(-1px);
+}
+
+/* 右侧 icon 与文字 */
+.stat-icon .wi {
+  font-size: 18px;
+  color: #2f98c5;
+  min-width: 20px;
+  text-align: center;
+}
+.stat-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+.stat-label {
+  font-size: 11px;
+  color: #3d5763;
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+.stat-main {
+  font-size: 13px;
+  font-weight: 700;
+  color: #11292f;
+  line-height: 1;
+}
+.stat-sub {
+  font-size: 11px;
+  color: #7f959a;
+  margin-top: 3px;
+}
+
+/* 天气折线图样式：放在卡片下方，占宽度并有固定高度 */
+.weather-chart {
+  width: 100%;
+  height: 140px;
+  margin-top: -15px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  /* 你可以加上背景/边框以区分： */
+  /* background: #fbfeff; border: 1px solid rgba(8,20,30,0.04); padding:6px; */
 }
 </style>

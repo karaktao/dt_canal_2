@@ -190,7 +190,6 @@ onMounted(() => {
     }
   }
 
-  console.log("🗺️ 地图已就绪：", map.value);
 });
 
 // --------- 地图操作方法 ---------
@@ -209,7 +208,7 @@ function onMapReady(map) {
 
 function registerLayer(layer) {
   if (!layer) {
-    console.warn("❌ 图层为空，未注册");
+
     return;
   }
 

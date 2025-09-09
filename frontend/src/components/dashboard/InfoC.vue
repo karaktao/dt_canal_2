@@ -13,7 +13,7 @@ export default {
 
 <style>
 .info-boxC {
-  width: 400px;
+  width: 450px;
   height: 500px;
   padding: 0px;
   background-color: rgba(255, 255, 255, 0.5);

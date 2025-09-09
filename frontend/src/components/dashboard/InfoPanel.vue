@@ -106,8 +106,8 @@ onBeforeUnmount(() => {
 .info-panel {
   position: fixed;
   bottom: 55px;
-  left: 25%;
-  width: 53%;
+  left: 27.5%;
+  width: 48%;
   overflow-y: auto;
   backdrop-filter: blur(5px);
   z-index: 1002;

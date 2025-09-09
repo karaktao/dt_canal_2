@@ -58,13 +58,14 @@ function handleWaterRefresh(...args) {
 
 <style scoped>
 .info-panel {
-  width: 400px;
+  width: 450px;
   height: 800px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 0;
   box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .panel {
