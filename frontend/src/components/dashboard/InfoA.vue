@@ -19,6 +19,9 @@
       :data="waterLevelData"
       @refresh="handleWaterRefresh"
     />
+    <div class="section-header">
+      <span class="title">Lock Status</span>
+    </div>
   </div>
 </template>
 
@@ -65,11 +68,27 @@ function handleWaterRefresh(...args) {
   gap: 8px;
   padding: 0;
   box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* 取消外部间距，确保 header 与 panel 紧贴 */
+.section-header {
+  margin: 0;
+  padding: 8px 0;          /* 如果想更紧，设为 2px 或 0 */
+  line-height: 1;
+}
+
+.section-header .title {
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+  margin-left: 10px;
 }
 
 .panel {
-  flex: 1 1 0;
+  flex: 0 0 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;

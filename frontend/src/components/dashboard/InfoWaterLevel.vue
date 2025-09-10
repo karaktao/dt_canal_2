@@ -1,7 +1,8 @@
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch, onBeforeUnmount } from "vue";
 import axios from "axios";
+import * as echarts from "echarts";
 
 /* ----- 配置 ----- */
 const levelCodes = ["EEFD", "WESTV", "LOBI"];
@@ -57,6 +58,10 @@ const scrollRef = ref(null);
 
 // 用于渲染的一行四个城市顺序（可调整）
 const displayCodes = ["EEFD", "WESTV", "LOBI", "KAUB"];
+
+// 水位折线图
+const lobithChartEl = ref(null);
+let lobithChartInstance = null;
 
 // 从已有显示函数复用并统一输出（字符串，不带单位）
 function getLevelDisplay(code) {
@@ -228,9 +233,191 @@ const lobithRows = computed(() => {
     }
   }
   // sort by date ascending
-  rows.sort((a, b) => (a.dateTime > b.dateTime ? 1 : a.dateTime < b.dateTime ? -1 : 0));
+  rows.sort((a, b) =>
+    a.dateTime > b.dateTime ? 1 : a.dateTime < b.dateTime ? -1 : 0
+  );
   return rows;
 });
+
+function buildLobithOption(rows) {
+  // 横坐标只显示 日-月（DD-MM）
+  const labels = rows.map((r) => {
+    try {
+      const d = new Date(r.dateTime);
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      return `${day}-${month}`;
+    } catch (e) {
+      return r.dateTime;
+    }
+  });
+
+  const measuredData = rows.map((r) =>
+    r.isPrediction ? null : Number.isFinite(r.value) ? r.value : null
+  );
+  const predictionData = rows.map((r) =>
+    r.isPrediction ? (Number.isFinite(r.value) ? r.value : null) : null
+  );
+
+  // 收集所有有效数值（包括 measured 与 prediction）
+  const allNums = rows
+    .map((r) => (Number.isFinite(r.value) ? Number(r.value) : NaN))
+    .filter((v) => Number.isFinite(v));
+
+  // 计算 y 轴的 max/min 按规则（10 的倍数）：
+  // yMax = 大于 maxVal 的最小 10 的倍数
+  // yMin = 小于 minVal 的最大 10 的倍数
+  let yMax, yMin;
+  if (allNums.length === 0) {
+    // 没有数据时的回退值（按 10 的规则）
+    yMax = 10;
+    yMin = -10;
+  } else {
+    const maxVal = Math.max(...allNums);
+    const minVal = Math.min(...allNums);
+
+    // 严格大于 maxVal 的最小 10 的倍数
+    yMax = Math.floor(maxVal / 10) * 10 + 10;
+
+    // 严格小于 minVal 的最大 10 的倍数
+    yMin = Math.ceil(minVal / 10) * 10 - 10;
+
+    // 额外容错：如果计算结果相等或 yMin >= yMax，则扩展范围
+    if (yMin >= yMax) {
+      // 以中心值为基准，确保至少有间距 2 * 10（即 20）
+      const center = (maxVal + minVal) / 2 || 0;
+      yMax = Math.ceil((center + 10) / 10) * 10;
+      yMin = Math.floor((center - 10) / 10) * 10;
+      if (yMin === yMax) {
+        yMax = yMin + 10;
+      }
+    }
+  }
+
+  // 辅助：把 ISO 转成 YYYY-MM-DD HH:mm
+  function fmtFullLocal(iso) {
+    try {
+      const d = new Date(iso);
+      const Y = d.getFullYear();
+      const M = String(d.getMonth() + 1).padStart(2, "0");
+      const D = String(d.getDate()).padStart(2, "0");
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mm = String(d.getMinutes()).padStart(2, "0");
+      return `${D}-${M}-${Y} ${hh}:${mm}`; // 如果你想要 YYYY-MM-DD 把顺序改为 `${Y}-${M}-${D} ${hh}:${mm}`
+    } catch (e) {
+      return iso;
+    }
+  }
+
+  return {
+    tooltip: {
+      trigger: "axis",
+      triggerOn: "mousemove",
+      renderMode: "html",
+      enterable: true,
+      confine: false, // 若想把 tooltip 限制在图表内可设为 true
+
+      // extraCssText:
+      //   "background: rgba(50,50,50,0.92); color:#fff; border-radius:6px; padding:8px 10px; max-width:320px; box-shadow:0 6px 18px rgba(0,0,0,0.25);",
+      position: function (pos, params, el, elRect, size) {
+        const gap = 8;
+        const mouseX = pos[0],
+          mouseY = pos[1];
+        const tipW = size && size.contentSize ? size.contentSize[0] : size[0];
+        const tipH = size && size.contentSize ? size.contentSize[1] : size[1];
+
+        // 首选放上方
+        let x = mouseX;
+        let y = mouseY - tipH - gap;
+
+        // 超出上方则放下方
+        if (y < 0) y = mouseY + gap;
+
+        // 右侧边界检测
+        const containerW = elRect
+          ? elRect.width
+          : document.documentElement.clientWidth || 1000;
+        if (x + tipW > containerW) x = containerW - tipW - 6;
+        if (x < 6) x = 6;
+
+        // 返回相对于图表容器左上角的坐标
+        return [x, y];
+      },
+
+      axisPointer: { type: "shadow" },
+      textStyle: {
+        fontSize: 10, // <- 改这个数值调整字体大小
+      },
+
+      formatter: function (params) {
+        if (!params || !params.length) return "";
+        const idx = params[0].dataIndex;
+        const fullTime =
+          rows && rows[idx] && rows[idx].dateTime
+            ? fmtFullLocal(rows[idx].dateTime)
+            : "";
+        const seriesLines = params
+          .map((p) => {
+            const val =
+              p.value === null || p.value === undefined ? "—" : p.value;
+            return `${p.marker} ${p.seriesName}：${val}`;
+          })
+          .join("<br/>");
+        return `${fullTime}<br/>${seriesLines}`;
+      },
+    },
+    legend: { data: ["Measured", "Prediction"], top: 0 }, // 上移一点，不占用太多空间
+    grid: { top: 32, left: 35, right: 5, bottom: 60, height: 80 }, // top 减小，腾出高度给图
+    xAxis: {
+      type: "category",
+      data: labels,
+      boundaryGap: false,
+      axisLabel: {
+        rotate: 0,
+        fontSize: 10,
+        interval: Math.ceil(labels.length / 8),
+      },
+    },
+    yAxis: {
+      type: "value",
+      name: "Lobith (cm)",
+      min: yMin,
+      max: yMax,
+      axisLabel: { fontSize: 10, formatter: "{value}" },
+    },
+    series: [
+      {
+        name: "Measured",
+        type: "line",
+        data: measuredData,
+        showSymbol: false,
+        lineStyle: { width: 2 },
+        itemStyle: { color: "#0178ca" },
+      },
+      {
+        name: "Prediction",
+        type: "line",
+        data: predictionData,
+        showSymbol: false,
+        lineStyle: { width: 2, type: "dashed" },
+        itemStyle: { color: "#b90101" },
+      },
+    ],
+  };
+}
+
+function initLobithChart() {
+  if (!lobithChartEl.value) return;
+  lobithChartInstance = echarts.init(lobithChartEl.value);
+}
+
+function updateLobithChart() {
+  if (!lobithChartInstance) initLobithChart();
+  if (!lobithChartInstance) return;
+  const rows = lobithRows.value || [];
+  const option = buildLobithOption(rows);
+  lobithChartInstance.setOption(option, { notMerge: false });
+}
 
 /* 辅助：把 ISO 时间转成本地可读短串 */
 function fmtLocalShort(iso) {
@@ -395,17 +582,48 @@ function kaubDischargeTimeDisplay() {
 onMounted(() => {
   fetchAll();
 });
+
+// 当 lobithRows 变化时更新图表
+watch(
+  lobithRows,
+  () => {
+    updateLobithChart();
+  },
+  { immediate: true, deep: true }
+);
+
+// 窗口尺寸变化时调整图表
+function handleResize() {
+  if (lobithChartInstance) lobithChartInstance.resize();
+}
+window.addEventListener("resize", handleResize);
+
+// 启动时初始化图表并请求数据（确保你已有 fetchAll）
+onMounted(() => {
+  initLobithChart();
+  fetchAll();
+});
+
+// 卸载清理
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", handleResize);
+  if (lobithChartInstance) {
+    lobithChartInstance.dispose();
+    lobithChartInstance = null;
+  }
+});
 </script>
 
 <template>
   <el-card
-    class="4city-card"
+    class="four-city-card"
     style="
       width: 100%;
       padding: 0;
       box-shadow: none;
       border: 0;
       background: transparent;
+      height: 220px;
     "
   >
     <div ref="scrollRef" class="scroll-container">
@@ -437,69 +655,47 @@ onMounted(() => {
         <!-- city-card -->
       </div>
       <!-- card-grid -->
+      <div
+        ref="lobithChartEl"
+        class="lobith-chart-container"
+        v-if="lobithRows.length"
+        role="img"
+        aria-label="Lobith 水位折线图"
+      ></div>
     </div>
-
-  <!-- ========== Lobith 表格可视化区 ========== -->
-<section class="lobith-table-section" v-if="lobithRows.length">
-  <div class="table-header">
-    <h4>Lobith 数据（监测 vs 预测）</h4>
-    <div class="legend">
-      <span class="legend-item measured"><i></i> 监测</span>
-      <span class="legend-item prediction"><i></i> 预测</span>
-    </div>
-  </div>
-
-  <div class="table-wrap">
-    <table class="lobith-table">
-      <thead>
-        <tr>
-          <th>时间（本地）</th>
-          <th>值 (cm)</th>
-          <th>类型</th>
-          <th>min</th>
-          <th>max</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="(r, idx) in lobithRows"
-          :key="r.dateTime + '-' + idx"
-          :class="[{ prediction: r.isPrediction, measured: !r.isPrediction }, idx === lobithRows.length - 1 ? 'latest' : '']"
-        >
-          <td>{{ fmtLocalShort(r.dateTime) }}</td>
-          <td>{{ Number.isFinite(r.value) ? r.value : '—' }}</td>
-          <td>{{ r.isPrediction ? '预测' : '监测' }}</td>
-          <td>{{ r.min !== null ? r.min : '—' }}</td>
-          <td>{{ r.max !== null ? r.max : '—' }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</section>
-
   </el-card>
-
-
-
 </template>
 
 <style scoped>
 .scroll-container {
-  margin-left: -8px;
-  margin-top: -5px;
-  width: 105%;
+  margin-left: 0;
+  margin-top: -10px; /* 顶部留出一点空白 */
+  width: 100%;
   height: 500px;
-  overflow-y: auto;
-  padding: 0px;
+  overflow: visible !important;
+  padding: 0px; /* 给内部内容一点内边距 */
   box-sizing: border-box;
 }
 .card-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 3px;
+  gap: 0px; /* 卡片间距可以加大点 */
+  margin-bottom: 0px; /* <-- 关键：控制与图表的间距 */
 }
+
+.lobith-chart-container {
+  width: 100%;
+  box-sizing: border-box;
+  height: 300px; /* 可以改为 300 / 360，根据视觉调整 */
+  max-height: 60vh; /* 在屏幕较短时限制高度 */
+  margin-top: -35px; /* 如果想要更大间距，可以改为 8px 或 12px */
+  overflow: visible; /* 保证内部绘制不会被父元素裁切（父容器也需要支持） */
+  border-radius: 6px;
+  background: transparent;
+}
+
 .city-card {
-  padding: 10px;
+  padding: 0px;
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -556,70 +752,4 @@ onMounted(() => {
   font-size: 12px;
   color: #374151;
 }
-
-/* 状态色 */
-.status-normal {
-  color: #111827;
-}
-.status-warning {
-  color: #b45309;
-} /* 橙 */
-.status-danger {
-  color: #dc2626;
-} /* 红 */
-
-/* 响应式 */
-@media (max-width: 1100px) {
-  .card-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 560px) {
-  .card-grid {
-    grid-template-columns: repeat(1, 1fr);
-  }
-}
-
-
-
-/* ---------- Lobith 表格样式（新增） ---------- */
-.lobith-table-section {
-  margin-top: 14px;
-  padding: 10px;
-  background: rgba(255,255,255,0.03);
-  border-radius: 6px;
-}
-.table-header {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-.legend { display:flex; gap:8px; align-items:center; font-size:13px; }
-.legend-item { display:flex; align-items:center; gap:6px; }
-.legend-item i { width:12px; height:12px; display:inline-block; border-radius:2px; }
-.legend-item.measured i { background:#0178ca; }
-.legend-item.prediction i { background:#b90101; }
-
-.table-wrap { overflow:auto; max-height:260px; border-radius:6px; }
-.lobith-table { width:100%; border-collapse: collapse; min-width: 720px; }
-.lobith-table thead th {
-  text-align:left;
-  padding:8px 10px;
-  font-size:13px;
-  background: rgba(0,0,0,0.04);
-  position: sticky;
-  top: 0;
-  z-index: 3;
-}
-.lobith-table tbody td {
-  padding:8px 10px;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
-  font-size:13px;
-}
-.lobith-table tbody tr.measured td { color: #0b67a6; }     /* 监测：蓝 */
-.lobith-table tbody tr.prediction td { color: #b90000; }   /* 预测：红 */
-.lobith-table tbody tr.latest { background: rgba(255,215,0,0.06); }
-
 </style>

@@ -591,7 +591,7 @@ function buildWeeklyOption() {
       left: "center",
       textStyle: { fontSize: 11 },
     },
-    grid: { left: 44, right: 44, top: 36, bottom: 20, height: 80 },
+    grid: { left: 54, right: 64, top: 36, bottom: 20, height: 90 },
     xAxis: [
       {
         type: "category",
@@ -768,7 +768,7 @@ onBeforeUnmount(() => {
   padding: 8px !important;
   align-items: flex-start !important;
   gap: 8px !important;
-  margin-top: -8px !important;
+  margin-top: -20px !important;
   border-radius: 8px !important;
   /* background: #fff !important; */
   overflow: visible !important;
@@ -901,10 +901,11 @@ onBeforeUnmount(() => {
 /* 天气折线图样式：放在卡片下方，占宽度并有固定高度 */
 .weather-chart {
   width: 100%;
-  height: 140px;
+  height: 150px;
   margin-top: -15px;
   box-sizing: border-box;
   border-radius: 6px;
+  margin-bottom: -15px;
   /* 你可以加上背景/边框以区分： */
   /* background: #fbfeff; border: 1px solid rgba(8,20,30,0.04); padding:6px; */
 }
