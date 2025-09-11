@@ -367,7 +367,7 @@ function buildLobithOption(rows) {
       },
     },
     legend: { data: ["Measured", "Prediction"], top: 0 }, // 上移一点，不占用太多空间
-    grid: { top: 32, left: 35, right: 5, bottom: 60, height: 80 }, // top 减小，腾出高度给图
+    grid: { top: 32, left: 35, right: 5, bottom: 60, height: 70 }, // top 减小，腾出高度给图
     xAxis: {
       type: "category",
       data: labels,
@@ -392,15 +392,15 @@ function buildLobithOption(rows) {
         data: measuredData,
         showSymbol: false,
         lineStyle: { width: 2 },
-        itemStyle: { color: "#0178ca" },
+        itemStyle: { color: "#5470C6" },
       },
       {
         name: "Prediction",
         type: "line",
         data: predictionData,
         showSymbol: false,
-        lineStyle: { width: 2, type: "dashed" },
-        itemStyle: { color: "#b90101" },
+        lineStyle: { width: 2 },
+        itemStyle: { color: "#91CC75" },
       },
     ],
   };
@@ -623,7 +623,7 @@ onBeforeUnmount(() => {
       box-shadow: none;
       border: 0;
       background: transparent;
-      height: 220px;
+      height: 210px;
     "
   >
     <div ref="scrollRef" class="scroll-container">
@@ -726,6 +726,7 @@ onBeforeUnmount(() => {
   font-size: 22px;
   font-weight: 800;
   line-height: 1;
+  color: #3c424be0;
 }
 .level-unit {
   font-size: 14px;
@@ -747,6 +748,7 @@ onBeforeUnmount(() => {
 .discharge-value {
   font-size: 16px;
   font-weight: 700;
+  color: #3c424bea;
 }
 .discharge-unit {
   font-size: 12px;

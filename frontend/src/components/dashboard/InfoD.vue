@@ -1,8 +1,5 @@
 <template>
-   <el-card class="info-boxC">
-    <h4>Transport</h4>
-    <!-- 你的图表/数据 -->
-  </el-card>
+
 </template>
 
 <script>

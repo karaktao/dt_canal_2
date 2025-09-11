@@ -591,7 +591,7 @@ function buildWeeklyOption() {
       left: "center",
       textStyle: { fontSize: 11 },
     },
-    grid: { left: 54, right: 64, top: 36, bottom: 20, height: 90 },
+    grid: { left: 54, right: 64, top: 36, bottom: 20, height: 75 },
     xAxis: [
       {
         type: "category",
@@ -633,7 +633,7 @@ function buildWeeklyOption() {
         yAxisIndex: 0,
         data: precip,
         barMaxWidth: 25, // 柱宽，可调整
-        itemStyle: { opacity: 0.8 },
+        itemStyle: { color: "#5470C6", opacity: 0.75 },
         emphasis: { focus: "series" },
       },
       {
@@ -644,7 +644,8 @@ function buildWeeklyOption() {
         data: windMax,
         showSymbol: true,
         symbolSize: 5,
-        lineStyle: { width: 1.5 },
+        lineStyle: { width: 1.5, color: "#91CC75" },
+        itemStyle: { color: '#91CC75' },
       },
     ],
   };
@@ -768,7 +769,7 @@ onBeforeUnmount(() => {
   padding: 8px !important;
   align-items: flex-start !important;
   gap: 8px !important;
-  margin-top: -20px !important;
+  margin-top: -10px !important;
   border-radius: 8px !important;
   /* background: #fff !important; */
   overflow: visible !important;
@@ -870,7 +871,7 @@ onBeforeUnmount(() => {
 /* 右侧 icon 与文字 */
 .stat-icon .wi {
   font-size: 18px;
-  color: #2f98c5;
+  color: #5ca6bd;
   min-width: 20px;
   text-align: center;
 }
@@ -901,7 +902,7 @@ onBeforeUnmount(() => {
 /* 天气折线图样式：放在卡片下方，占宽度并有固定高度 */
 .weather-chart {
   width: 100%;
-  height: 150px;
+  height: 135px;
   margin-top: -15px;
   box-sizing: border-box;
   border-radius: 6px;

@@ -22,6 +22,7 @@
     <div class="section-header">
       <span class="title">Lock Status</span>
     </div>
+    <InfoLock class="panel bottom" />
   </div>
 </template>
 
@@ -29,6 +30,7 @@
 import { toRefs } from "vue";
 import InfoWeather from "./InfoWeather.vue";
 import InfoWaterLevel from "./InfoWaterLevel.vue";
+import InfoLock from './InfoLock.vue';
 
 // 接收来自 index.vue 的共享 state + 可能的回调和数据
 const props = defineProps({
@@ -68,13 +70,15 @@ function handleWaterRefresh(...args) {
   gap: 8px;
   padding: 0;
   box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.5);
+
 }
 
 /* 取消外部间距，确保 header 与 panel 紧贴 */
 .section-header {
   margin: 0;
   padding: 8px 0;          /* 如果想更紧，设为 2px 或 0 */
+  margin-bottom: -10px;     /* 与 panel 间距 */
   line-height: 1;
 }
 
@@ -85,12 +89,7 @@ function handleWaterRefresh(...args) {
   padding: 0;
   margin: 0;
   margin-left: 10px;
+  margin-bottom: -15px; /* 紧贴上方 panel */
 }
 
-.panel {
-  flex: 0 0 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
 </style>

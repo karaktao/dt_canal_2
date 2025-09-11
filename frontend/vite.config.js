@@ -78,6 +78,12 @@ export default defineConfig(({ mode, command }) => {
           changeOrigin: true,
           rewrite: path => path.replace(/^\/api\/v14rws/, '')
         },
+        // ✅ 为 eurisportal 新增代理
+        '/api/euris': {
+          target: 'https://www.eurisportal.eu',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/euris/, ''),
+        },
 
         // 1) 更具体的 section 路由，必须优先匹配
         '^/api/vessels/section': {

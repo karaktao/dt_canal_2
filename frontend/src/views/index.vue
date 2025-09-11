@@ -806,7 +806,7 @@ onMounted(() => {
   position: absolute;
   top: 5px;
   left: 10px;
-  width: 400px;
+  width: 450px;
   padding: 0;
   margin: 0;
   z-index: 2000;
@@ -846,7 +846,7 @@ onMounted(() => {
     margin-top: -20px; /* 让下拉面板紧贴 header */
     background: rgba(255, 255, 255, 0.6) !important;
     backdrop-filter: blur(5px);
-    width: 400px !important;
+    width: 450px !important;
     border: none;
     box-shadow: none;
     padding: 8px;

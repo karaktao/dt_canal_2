@@ -26,7 +26,7 @@ const COLORS = {
   stationary: "#3b82f6", // 停靠/静止（蓝）
   slow: "#f59e0b",       // 缓慢（橙）
   moving: "#16a34a",     // 航行（绿）
-  private: "#8B5CF6",    // 私密（紫）
+  private: "#868686",    // 私密（紫）
   stroke: "#ffffff",
 };
 
