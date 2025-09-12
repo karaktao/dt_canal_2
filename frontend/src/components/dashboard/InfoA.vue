@@ -64,7 +64,7 @@ function handleWaterRefresh(...args) {
 <style scoped>
 .info-panel {
   width: 450px;
-  height: 800px;
+  height: 780px;
   display: flex;
   flex-direction: column;
   gap: 8px;

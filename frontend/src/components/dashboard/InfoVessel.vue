@@ -10,13 +10,13 @@
           <div class="row"><span class="k">SOG:</span><span class="v">{{ keyFields.sog }}</span></div>
           <div class="row"><span class="k">COG:</span><span class="v">{{ keyFields.cog }}</span></div>
           <div class="row"><span class="k">Status:</span><span class="v">{{ keyFields.nav }}</span></div>
-          <div class="row"><span class="k">Destination</span><span class="v">{{ keyFields.dest }}</span></div>
+          <div class="row"><span class="k">Destination:</span><span class="v">{{ keyFields.dest }}</span></div>
           <div class="row"><span class="k">ETA:</span><span class="v">{{ keyFields.eta }}</span></div>
           <div class="row"><span class="k">Nearest lock:</span><span class="v">{{ keyFields.lock }}</span></div>
         </div>
       </div>
 
-      <!-- 中间列：方形地图卡（含船只图标） -->
+      <!-- 中间列：方形地图卡（只渲染地图，不叠加信息） -->
       <div class="v-middle">
         <div class="map-card">
           <div ref="mapDiv" class="map-container" />
@@ -38,18 +38,9 @@ import Map from "ol/Map";
 import View from "ol/View";
 import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
-import Feature from "ol/Feature";
-import Point from "ol/geom/Point";
-import VectorSource from "ol/source/Vector";
-import VectorLayer from "ol/layer/Vector";
-import Style from "ol/style/Style";
-import Icon from "ol/style/Icon";
 import { fromLonLat } from "ol/proj";
 
-import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
-
-/* ICON 路径：确保该文件位于 public/icons/ship-arrow.svg 或按需修改路径 */
-const ICON_SRC = "/icons/ship-arrow.svg";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 
 /* 示例 vessel JSON（直接内嵌） */
 const vessel = ref({
@@ -100,20 +91,16 @@ const keyFields = computed(() => {
   };
 });
 
-/* Map and marker setup */
+/* Map setup */
 const mapDiv = ref(null);
 let map = null;
-let markerLayer = null;
-let markerFeature = null;
-
-function degToRad(d) { return (d ?? 0) * Math.PI / 180; }
 
 onMounted(() => {
+  // 防护：如果没有经纬度，使用一个默认中心
   const lon = Number(vessel.value.lon ?? 6.55);
   const lat = Number(vessel.value.lat ?? 52.13);
   const center = fromLonLat([lon, lat]);
 
-  // base map
   map = new Map({
     target: mapDiv.value,
     layers: [
@@ -128,70 +115,13 @@ onMounted(() => {
     }),
     controls: []
   });
-
-  // marker feature (ship icon)
-  markerFeature = new Feature({
-    geometry: new Point(center)
-  });
-
-  // style with your icon, rotation in radians
-  const iconStyle = new Style({
-    image: new Icon({
-      src: ICON_SRC,
-      anchor: [0.5, 0.5],   // center anchor
-      rotateWithView: false,
-      rotation: degToRad(vessel.value.cog_deg ?? 0),
-      scale: 0.8
-    })
-  });
-  markerFeature.setStyle(iconStyle);
-
-  markerLayer = new VectorLayer({
-    source: new VectorSource({
-      features: [markerFeature]
-    }),
-    zIndex: 300
-  });
-
-  map.addLayer(markerLayer);
 });
-
-/* watch vessel: 更新位置与方向（如果后续你从父组件或 API 更新 vessel 数据，这里会生效） */
-watch(vessel, (nv) => {
-  if (!map || !markerFeature) return;
-  const lon = Number(nv.lon ?? 0);
-  const lat = Number(nv.lat ?? 0);
-  const coord = fromLonLat([lon, lat]);
-
-  // update geometry
-  markerFeature.setGeometry(new Point(coord));
-
-  // update rotation by replacing style image rotation (easier: set new style)
-  const newStyle = new Style({
-    image: new Icon({
-      src: ICON_SRC,
-      anchor: [0.5, 0.5],
-      rotateWithView: false,
-      rotation: degToRad(nv.cog_deg ?? 0),
-      scale: 0.8
-    })
-  });
-  markerFeature.setStyle(newStyle);
-
-  // center map smoothly (optional)
-  const view = map.getView();
-  if (view) {
-    view.animate({ center: coord, duration: 400 });
-  }
-}, { immediate: true, deep: true });
 
 onBeforeUnmount(() => {
   if (map) {
     map.setTarget(null);
     map = null;
   }
-  markerLayer = null;
-  markerFeature = null;
 });
 </script>
 
@@ -201,7 +131,7 @@ onBeforeUnmount(() => {
 /* 三列按比例 2 : 4 : 2，同时加入 minmax 保证最小宽度 */
 .vessel-card {
   display: grid;
-  gap: 5px;
+  gap: 12px;
   align-items: start;
   grid-template-columns: minmax(160px, 2fr) minmax(300px, 4fr) minmax(120px, 2fr);
   width: 100%;
@@ -218,7 +148,17 @@ onBeforeUnmount(() => {
 
 /* 中间列：方形地图卡片 */
 .v-middle { display:flex; align-items: center; justify-content:center; padding: 6px 4px; }
-
+.map-card {
+  width: 100%;
+  /* 方形：长宽相等 */
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  background: #fff;
+  display:flex;
+  flex-direction:column;
+}
 
 /* 地图容器填满卡片 */
 .map-container {
