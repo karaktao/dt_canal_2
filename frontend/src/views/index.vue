@@ -453,7 +453,7 @@ const categories = [
     options: [
       { label: "Vessel", value: "vessel" },
       { label: "Notice to Skippers", value: "notice" },
-      { label: "Wind", value: "wind" },
+      // { label: "Wind", value: "wind" },
     ],
   },
 ];

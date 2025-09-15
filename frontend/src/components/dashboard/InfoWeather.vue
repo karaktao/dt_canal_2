@@ -803,7 +803,7 @@ onBeforeUnmount(() => {
 }
 .temp-icon .wi {
   font-size: 45px;
-  color: #2f98c5;
+  color: #409eff;
   line-height: 1;
 }
 .temp-values {
@@ -871,7 +871,7 @@ onBeforeUnmount(() => {
 /* 右侧 icon 与文字 */
 .stat-icon .wi {
   font-size: 18px;
-  color: #5ca6bd;
+  color: #409eff;
   min-width: 20px;
   text-align: center;
 }

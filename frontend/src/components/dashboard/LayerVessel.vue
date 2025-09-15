@@ -1,239 +1,249 @@
-<template>
-  <div class="info-vessel-root" v-bind="$attrs">
-    <div class="vessel-card" role="region" aria-label="Vessel summary">
-      <!-- 左列：基础信息 -->
-      <div class="v-left">
-        <div class="v-title">Vessel</div>
-        <div class="v-name">{{ keyFields.name }}</div>
-        <div class="v-meta">
-          <div class="row"><span class="k">MMSI:</span><span class="v">{{ keyFields.mmsi }}</span></div>
-          <div class="row"><span class="k">SOG:</span><span class="v">{{ keyFields.sog }}</span></div>
-          <div class="row"><span class="k">COG:</span><span class="v">{{ keyFields.cog }}</span></div>
-          <div class="row"><span class="k">Status:</span><span class="v">{{ keyFields.nav }}</span></div>
-          <div class="row"><span class="k">Destination</span><span class="v">{{ keyFields.dest }}</span></div>
-          <div class="row"><span class="k">ETA:</span><span class="v">{{ keyFields.eta }}</span></div>
-          <div class="row"><span class="k">Nearest lock:</span><span class="v">{{ keyFields.lock }}</span></div>
-        </div>
-      </div>
-
-      <!-- 中间列：方形地图卡（含船只图标） -->
-      <div class="v-middle">
-        <div class="map-card">
-          <div ref="mapDiv" class="map-container" />
-        </div>
-      </div>
-
-      <!-- 右列：占位（你后续放方向/速度卡） -->
-      <div class="v-right">
-        <!-- 这里暂时空着，后续放 direction / speed 小卡 -->
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup>
-/* 地图依赖（OpenLayers）*/
-import "ol/ol.css";
-import Map from "ol/Map";
-import View from "ol/View";
-import TileLayer from "ol/layer/Tile";
-import OSM from "ol/source/OSM";
-import Feature from "ol/Feature";
-import Point from "ol/geom/Point";
-import VectorSource from "ol/source/Vector";
+import { defineEmits } from "vue";
 import VectorLayer from "ol/layer/Vector";
-import Style from "ol/style/Style";
-import Icon from "ol/style/Icon";
-import { fromLonLat } from "ol/proj";
+import VectorSource from "ol/source/Vector";
+import Feature from "ol/Feature";
+import { Point } from "ol/geom";
+import { fromLonLat, transformExtent } from "ol/proj";
+import { Style, Fill, Stroke, Circle as CircleStyle, Text, Icon } from "ol/style";
 
-import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
+const emit = defineEmits(["map-layer-ready", "feature-clicked"]);
 
-/* ICON 路径：确保该文件位于 public/icons/ship-arrow.svg 或按需修改路径 */
-const ICON_SRC = "/icons/ship-arrow.svg";
-
-/* 示例 vessel JSON（直接内嵌） */
-const vessel = ref({
-  "mmsi": 244100001,
-  "imo": 0,
-  "name": "TWENTE BARGE 1",
-  "callsign": "PA001",
-  "ship_type": "Cargo barge",
-  "lat": 52.130000,
-  "lon": 6.550000,
-  "timestamp": "2025-09-12T13:40:00Z",
-  "sog_knots": 2.0,
-  "cog_deg": 80.0,
-  "heading_deg": 80,
-  "nav_status": "Under way using engine",
-  "length_m": 85,
-  "beam_m": 11,
-  "draught_m": 2.4,
-  "destination": "Zutphen",
-  "eta": "2025-09-12T15:40:00Z",
-  "eta_delta_min": -5,
-  "distance_to_destination_m": 7600,
-  "nearest_lock": "Eefde Voorsluis",
-  "water_level_m": 1.25,
-  "wind_speed_ms": 5.2,
-  "position_accuracy": 1,
-  "ais_message_type": 1,
-  "last_report_minutes": 0.5,
-  "alerts": ["none"]
+// --- 源与图层 ---
+const vesselSource = new VectorSource();
+const vesselLayer = new VectorLayer({
+  source: vesselSource,
+  zIndex: 110,
+  style: (feature) => getStyleForFeature(feature),
 });
+vesselLayer.set("name", "vessel");
 
-const prettyJson = computed(() => {
-  try { return JSON.stringify(vessel.value, null, 2); }
-  catch (e) { return String(vessel.value); }
-});
+// ========== 样式缓存机制 ==========
+const styleCache = new Map(); // key -> ol/style/Style
 
-const keyFields = computed(() => {
-  const v = vessel.value || {};
-  return {
-    name: v.name ?? "—",
-    mmsi: v.mmsi ?? "—",
-    sog: (v.sog_knots !== undefined && v.sog_knots !== null) ? `${v.sog_knots} kn` : "—",
-    cog: (v.cog_deg !== undefined && v.cog_deg !== null) ? `${v.cog_deg}°` : "—",
-    nav: v.nav_status ?? "—",
-    dest: v.destination ?? "—",
-    eta: v.eta ?? "—",
-    lock: v.nearest_lock ?? "—",
-  };
-});
+// 颜色策略（按需调整）
+const COLORS = {
+  stationary: "#3b82f6", // 停靠/静止（蓝）
+  slow: "#f59e0b",       // 缓慢（橙）
+  moving: "#16a34a",     // 航行（绿）
+  private: "#868686",    // 私密（紫）
+  stroke: "#ffffff",
+};
 
-/* Map and marker setup */
-const mapDiv = ref(null);
-let map = null;
-let markerLayer = null;
-let markerFeature = null;
+// 将 cog（度）量化到 5° 的步长，减少样式数量
+function quantizeCog(cogDeg) {
+  if (typeof cogDeg !== "number" || Number.isNaN(cogDeg)) return 0;
+  return Math.round(cogDeg / 5) * 5;
+}
 
-function degToRad(d) { return (d ?? 0) * Math.PI / 180; }
+// 判断 moving 是否表示“是”（兼容 true / "yes" / "Yes" / "YES"）
+function isMovingFlag(data) {
+  if (!data) return false;
+  const mv = data.moving;
+  if (mv === true) return true;
+  if (typeof mv === "string" && mv.toLowerCase() === "yes") return true;
+  return false;
+}
 
-onMounted(() => {
-  const lon = Number(vessel.value.lon ?? 6.55);
-  const lat = Number(vessel.value.lat ?? 52.13);
-  const center = fromLonLat([lon, lat]);
+// 根据数据决定颜色（优先级：privacyClass -> moving/sog -> stationary）
+function decideColor(data = {}) {
+  if (data?.privacyClass && Number(data.privacyClass) > 0) return COLORS.private;
+  if (data?.moving === true || String(data?.moving).toLowerCase() === "yes") return COLORS.moving;
+  const sog = Number(data?.sog ?? 0);
+  if (!Number.isNaN(sog) && sog > 1) return COLORS.moving;
+  if (!Number.isNaN(sog) && sog > 0) return COLORS.slow;
+  return COLORS.stationary;
+}
 
-  // base map
-  map = new Map({
-    target: mapDiv.value,
-    layers: [
-      new TileLayer({
-        source: new OSM()
-      })
-    ],
-    view: new View({
-      center,
-      zoom: 14,
-      projection: 'EPSG:3857'
-    }),
-    controls: []
-  });
+// 构造并缓存 Style，key 包含 shape(icon/dot), color, rotationQuant
+function getStyleKey({ shape, color, rotationQuant }) {
+  return `${shape}::${color}::${rotationQuant}`;
+}
 
-  // marker feature (ship icon)
-  markerFeature = new Feature({
-    geometry: new Point(center)
-  });
-
-  // style with your icon, rotation in radians
-  const iconStyle = new Style({
-    image: new Icon({
-      src: ICON_SRC,
-      anchor: [0.5, 0.5],   // center anchor
-      rotateWithView: false,
-      rotation: degToRad(vessel.value.cog_deg ?? 0),
-      scale: 0.8
-    })
-  });
-  markerFeature.setStyle(iconStyle);
-
-  markerLayer = new VectorLayer({
-    source: new VectorSource({
-      features: [markerFeature]
-    }),
-    zIndex: 300
-  });
-
-  map.addLayer(markerLayer);
-});
-
-/* watch vessel: 更新位置与方向（如果后续你从父组件或 API 更新 vessel 数据，这里会生效） */
-watch(vessel, (nv) => {
-  if (!map || !markerFeature) return;
-  const lon = Number(nv.lon ?? 0);
-  const lat = Number(nv.lat ?? 0);
-  const coord = fromLonLat([lon, lat]);
-
-  // update geometry
-  markerFeature.setGeometry(new Point(coord));
-
-  // update rotation by replacing style image rotation (easier: set new style)
-  const newStyle = new Style({
-    image: new Icon({
-      src: ICON_SRC,
+function createStyle({ shape, color, rotationRad, rotationQuant, labelText }) {
+  const stroke = new Stroke({ color: COLORS.stroke, width: 2 });
+  if (shape === "icon") {
+    const icon = new Icon({
+      src: "/icons/ship-arrow.svg",
+      scale: 1.2,
+      rotation: rotationRad,
+      rotateWithView: true,
       anchor: [0.5, 0.5],
-      rotateWithView: false,
-      rotation: degToRad(nv.cog_deg ?? 0),
-      scale: 0.8
-    })
+    });
+    return new Style({
+      image: icon,
+      text: new Text({
+        text: labelText || "",
+        offsetY: -14,
+        font: "12px sans-serif",
+        stroke: new Stroke({ color: "rgba(255,255,255,0.9)", width: 3 }),
+      }),
+    });
+  } else {
+    const circle = new CircleStyle({
+      radius: 5,
+      fill: new Fill({ color: color }),
+      stroke,
+    });
+    return new Style({
+      image: circle,
+      text: new Text({
+        text: labelText || "",
+        offsetY: -14,
+        font: "12px sans-serif",
+        stroke: new Stroke({ color: "rgba(255,255,255,0.9)", width: 3 }),
+      }),
+    });
+  }
+}
+
+// 对外：根据 feature 返回 style（会尝试复用缓存）
+// 修改点：只有当 isMovingFlag(data) 为 true 时才使用 icon，否则始终使用 dot
+function getStyleForFeature(feature) {
+  const data = feature.get("data") || {};
+  const label = data?.name || data?.trackID ? String(data?.name || data?.trackID) : "";
+  const color = decideColor(data);
+  const cog = Number(data?.cog ?? 0); // degree
+
+  // 新逻辑：以 moving 字段为准（兼容 boolean true 或字符串 "yes"）
+  const movingFlag = isMovingFlag(data);
+
+  // 若 movingFlag 为 false，则强制使用圆点（即使 cog 有值）
+  const useDot = !movingFlag;
+
+  const rotationQuant = quantizeCog(cog);
+  const rotationRad = (rotationQuant * Math.PI) / 180;
+
+  const shape = useDot ? "dot" : "icon";
+  const key = getStyleKey({ shape, color, rotationQuant });
+  if (styleCache.has(key)) {
+    return styleCache.get(key);
+  }
+  const style = createStyle({
+    shape: shape === "icon" ? "icon" : "dot",
+    color,
+    rotationRad,
+    rotationQuant,
+    // labelText: label,
   });
-  markerFeature.setStyle(newStyle);
+  styleCache.set(key, style);
+  return style;
+}
 
-  // center map smoothly (optional)
+// ========== 拉取 / 转换 / 刷新 逻辑（保持你原来的逻辑，只稍微调整） ==========
+let refreshTimer = null;
+let currentAbortController = null;
+const DEBOUNCE_MS = 600;
+
+async function fetchVesselsByBBox(minLon, minLat, maxLon, maxLat) {
+  if (currentAbortController) {
+    currentAbortController.abort();
+    currentAbortController = null;
+  }
+  currentAbortController = new AbortController();
+  const signal = currentAbortController.signal;
+
+  const params = new URLSearchParams({
+    minLon: String(minLon),
+    minLat: String(minLat),
+    maxLon: String(maxLon),
+    maxLat: String(maxLat),
+  });
+  const url = `/api/vessels?${params.toString()}`;
+
+  try {
+    const resp = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal,
+    });
+
+    if (!resp.ok) {
+      const txt = await resp.text().catch(() => "");
+      throw new Error(`HTTP ${resp.status} ${resp.statusText} ${txt}`);
+    }
+    return await resp.json();
+  } catch (err) {
+    if (err.name === "AbortError") return null;
+    throw err;
+  } finally {
+    currentAbortController = null;
+  }
+}
+
+function toFeatures(rows = []) {
+  const features = [];
+  for (const item of rows) {
+    const lon = item?.lon;
+    const lat = item?.lat;
+    if (typeof lon !== "number" || typeof lat !== "number") continue;
+    const f = new Feature({
+      geometry: new Point(fromLonLat([lon, lat])),
+      data: item, // 保留完整记录
+    });
+    features.push(f);
+  }
+  return features;
+}
+
+async function refreshByMapView(map) {
+  if (!map) return;
   const view = map.getView();
-  if (view) {
-    view.animate({ center: coord, duration: 400 });
-  }
-}, { immediate: true, deep: true });
+  if (!view) return;
+  const extent3857 = view.calculateExtent(map.getSize());
+  const [minX, minY, maxX, maxY] = transformExtent(extent3857, "EPSG:3857", "EPSG:4326");
+  const minLon = Math.min(minX, maxX);
+  const maxLon = Math.max(minX, maxX);
+  const minLat = Math.min(minY, maxY);
+  const maxLat = Math.max(minY, maxY);
 
-onBeforeUnmount(() => {
-  if (map) {
-    map.setTarget(null);
-    map = null;
+  try {
+    const rows = await fetchVesselsByBBox(minLon, minLat, maxLon, maxLat);
+    if (!rows) return;
+    const feats = toFeatures(Array.isArray(rows) ? rows : (rows.data || rows.items || []));
+    vesselSource.clear(true);
+    vesselSource.addFeatures(feats);
+  } catch (e) {
+    console.error("❌ 拉取船舶数据失败：", e);
   }
-  markerLayer = null;
-  markerFeature = null;
+}
+
+// 绑定 map 事件
+function attachMapEvents(map) {
+  if (!map) return;
+
+  if (refreshTimer) clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => refreshByMapView(map), 200);
+
+  const handler = () => {
+    if (refreshTimer) clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => refreshByMapView(map), DEBOUNCE_MS);
+  };
+  map.on("moveend", handler);
+
+  // 点击事件：把 feature 的 data 传给父组件
+  map.on("singleclick", (evt) => {
+    let hit = false;
+    map.forEachFeatureAtPixel(
+      evt.pixel,
+      (feature, layer) => {
+        if (layer === vesselLayer) {
+          const data = feature.get("data");
+          emit("feature-clicked", data);
+          hit = true;
+          return true;
+        }
+        return false;
+      },
+      { hitTolerance: 5 }
+    );
+  });
+
+  emit("map-layer-ready", vesselLayer);
+}
+
+defineExpose({
+  attachMapEvents,
+  getLayer: () => vesselLayer,
 });
 </script>
-
-<style scoped>
-.info-vessel-root { width: 100%; box-sizing: border-box; }
-
-/* 三列按比例 2 : 4 : 2，同时加入 minmax 保证最小宽度 */
-.vessel-card {
-  display: grid;
-  gap: 5px;
-  align-items: start;
-  grid-template-columns: minmax(160px, 2fr) minmax(300px, 4fr) minmax(120px, 2fr);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-/* 左列样式 */
-.v-left { padding: 6px 4px; }
-.v-title { font-size: 12px; color: #5e7176; font-weight: 600; margin-bottom: 4px; }
-.v-name { font-size: 14px; font-weight: 800; color: #0f2930; margin-bottom: 8px; }
-.v-meta .row { display:flex; justify-content:space-between; gap:8px; margin: 3px 0; font-size: 12px; color:#2f4850; }
-.v-meta .k { color:#6d8387; font-weight:600; }
-.v-meta .v { color:#0e2a2f; text-align:right; }
-
-/* 中间列：方形地图卡片 */
-.v-middle { display:flex; align-items: center; justify-content:center; padding: 6px 4px; }
-
-
-/* 地图容器填满卡片 */
-.map-container {
-  width: 100%;
-  height: 100%;
-}
-
-/* 右列占位样式（后续放方向/速度卡） */
-.v-right { padding: 6px 4px; display:flex; flex-direction:column; gap:8px; }
-
-/* 响应式：窄屏时堆叠为单列 */
-@media (max-width: 900px) {
-  .vessel-card {
-    grid-template-columns: 1fr;
-  }
-  .map-card { aspect-ratio: auto; height: 320px; } /* 小屏下取消正方形，给固定高度 */
-}
-</style>

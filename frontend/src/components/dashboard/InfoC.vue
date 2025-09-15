@@ -6,20 +6,19 @@
 
     <InfoVessel class="panel vessel-panel" />
 
-    <div class="section-header">
-      <span class="title">Logitics</span>
-    </div>
+    <InfoLogistic class="panel logistic-panel" />
 
     <div class="section-header">
       <span class="title">Notices</span>
     </div>
+    <InfoNotice class="panel notice-panel" />
   </el-card>
 </template>
 
 <script setup>
 import InfoVessel from "./InfoVessel.vue";
-
-
+import InfoLogistic from "./InfoLogistic.vue";
+import InfoNotice from "./InfoNotice.vue";
 </script>
 
 <style >
@@ -55,5 +54,7 @@ import InfoVessel from "./InfoVessel.vue";
   margin-left: 10px;
   margin-bottom: -15px; /* 紧贴上方 panel */
 }
-.vessel-panel { padding: 8px 10px; }
+.vessel-panel {
+  padding: 8px 10px;
+}
 </style>

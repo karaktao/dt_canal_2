@@ -788,7 +788,7 @@ function submitForm() {
               <el-col :span="12">
                 <el-form-item label="Priority">
                   <el-select v-model="form.priority" placeholder="Select">
-                    <el-option label="Cost" value="Cost" />
+                    <el-option label="Distance" value="Distance" />
                     <el-option label="Time" value="Time" />
                   </el-select>
                 </el-form-item>
@@ -1147,7 +1147,7 @@ function submitForm() {
           <el-col :span="12">
             <el-form-item label="Priority">
               <el-select v-model="form.priority" placeholder="Select">
-                <el-option label="Cost" value="Cost" />
+                <el-option label="Distance" value="Distance" />
                 <el-option label="Time" value="Time" />
               </el-select>
             </el-form-item>
