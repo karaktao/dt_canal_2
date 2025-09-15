@@ -633,7 +633,7 @@ function buildWeeklyOption() {
         yAxisIndex: 0,
         data: precip,
         barMaxWidth: 25, // 柱宽，可调整
-        itemStyle: { color: "#5470C6", opacity: 0.75 },
+        itemStyle: { color: "#409eff", opacity: 0.5 },
         emphasis: { focus: "series" },
       },
       {

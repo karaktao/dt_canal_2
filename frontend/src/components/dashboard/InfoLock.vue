@@ -458,43 +458,58 @@ function buildOptionFor(isrs) {
   const downstream = ordered.map(o => (downstreamRaw[o.idx] !== undefined ? downstreamRaw[o.idx] : null));
 
   return {
-    tooltip: {
-      trigger: "axis",
-      textStyle: {
-        fontSize: 10, // <- 改这个数值调整字体大小
-      },
-      formatter: function (params) {
-        // 使用 fullDates 中同位置的完整日期作为 tooltip 标题
-        const idx = params && params.length ? params[0].dataIndex : 0;
-        const fullDate = fullDates[idx] ?? "";
-        let html = `<div style="font-size:13px;">${fullDate}</div>`;
-        params.forEach(p => {
-          const name = p.seriesName;
-          const val = (p.value === null || p.value === undefined) ? "—" : p.value;
-          html += `<div style="margin-top:4px">${name}: <b>${val}</b></div>`;
-        });
-        return html;
-      }
+  color: ['#3B82F6', '#10B981'], // Legend/series 默认颜色（Upstream, Downstream）
+  tooltip: {
+    trigger: "axis",
+    textStyle: { fontSize: 10 },
+    formatter: function (params) {
+      const idx = params && params.length ? params[0].dataIndex : 0;
+      const fullDate = fullDates[idx] ?? "";
+      let html = `<div style="font-size:13px;">${fullDate}</div>`;
+      params.forEach(p => {
+        const name = p.seriesName;
+        const val = (p.value === null || p.value === undefined) ? "—" : p.value;
+        html += `<div style="margin-top:4px">${name}: <b>${val}</b></div>`;
+      });
+      return html;
+    }
+  },
+  legend: { data: ["Upstream", "Downstream"], top: 6 },
+  grid: { left: "0%", right: "4%", bottom: "8%", top: "20%", height: "80%", containLabel: true },
+  xAxis: {
+    type: "category",
+    data: xLabels,
+    axisLabel: { rotate: 0 },
+    boundaryGap: false,
+    lineStyle: { width: 1.5, color: '#3B82F6' },
+  },
+  yAxis: {
+    type: "value",
+    axisLabel: { formatter: "{value}" },
+    lineStyle: { width: 1.5, color: '#10B981' },
+  },
+  series: [
+    {
+      name: "Upstream",
+      type: "line",
+      smooth: true,
+      showSymbol: true,
+      data: upstream,
+      lineStyle: { width: 1.5, color: '#409eff' },   // ← Upstream 线颜色
+      itemStyle: { color: '#3B82F6' },              // ← 数据点颜色
     },
-    legend: { data: ["Upstream", "Downstream"], top: 6 },
-    grid: { left: "0%", right: "4%", bottom: "8%", top: "20%" ,height: "80%" , containLabel: true },
-    xAxis: {
-      type: "category",
-      data: xLabels,
-      axisLabel: { rotate: 0 },
-      boundaryGap: false,
-      lineStyle: { width: 1.5, color: '#3B82F6' },
-    },
-    yAxis: {
-      type: "value",
-      axisLabel: { formatter: "{value}" },
-      lineStyle: { width: 1.5, color: '#10B981' },
-    },
-    series: [
-      { name: "Upstream", type: "line", smooth: true, showSymbol: true, data: upstream },
-      { name: "Downstream", type: "line", smooth: true, showSymbol: true, data: downstream },
-    ],
-  };
+    {
+      name: "Downstream",
+      type: "line",
+      smooth: true,
+      showSymbol: true,
+      data: downstream,
+      lineStyle: { width: 1.5, color: '#91CC75' },   // ← Downstream 线颜色
+      itemStyle: { color: '#91CC75' },
+    }
+  ],
+};
+
 }
 
 
