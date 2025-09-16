@@ -247,3 +247,7 @@ defineExpose({
   getLayer: () => vesselLayer,
 });
 </script>
+
+<template>
+  <div style="display:none"></div>
+</template>

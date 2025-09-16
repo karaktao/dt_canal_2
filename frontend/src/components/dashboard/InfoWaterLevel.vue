@@ -392,7 +392,7 @@ function buildLobithOption(rows) {
         data: measuredData,
         showSymbol: false,
         lineStyle: { width: 2 },
-        itemStyle: { color: "#5470C6" },
+        itemStyle: { color: "#409eff" },
       },
       {
         name: "Prediction",
@@ -688,7 +688,7 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
   height: 300px; /* 可以改为 300 / 360，根据视觉调整 */
   max-height: 60vh; /* 在屏幕较短时限制高度 */
-  margin-top: -35px; /* 如果想要更大间距，可以改为 8px 或 12px */
+  margin-top: -45px; /* 如果想要更大间距，可以改为 8px 或 12px */
   overflow: visible; /* 保证内部绘制不会被父元素裁切（父容器也需要支持） */
   border-radius: 6px;
   background: transparent;

@@ -59,6 +59,9 @@ const NoticeInfo = defineAsyncComponent(() =>
 const LayerWind = defineAsyncComponent(() =>
   import("@/components/dashboard/LayerWind.vue")
 );
+const LogisticInfo = defineAsyncComponent(() =>
+  import("@/components/dashboard/LogisticInfo.vue")
+);
 
 import WaterLevelChart from "@/components/dashboard/WaterLevelChart.vue";
 import WaterDischargeChart from "@/components/dashboard/waterDischargeChart.vue";
@@ -189,7 +192,6 @@ onMounted(() => {
       console.warn("❌ 无法解析存储的图层状态");
     }
   }
-
 });
 
 // --------- 地图操作方法 ---------
@@ -208,7 +210,6 @@ function onMapReady(map) {
 
 function registerLayer(layer) {
   if (!layer) {
-
     return;
   }
 
@@ -484,18 +485,39 @@ onBeforeUnmount(() => {
 
 // ---------  处理子组件事件 ---------
 // 信息导航栏点击事件
+// index.vue 中：替换为更通用的处理函数
 function handleFeatureClick(feature) {
-  if (feature) {
-    selectedItem.value = {
-      locCode: feature.locCode,
-      locNaam: feature.locNaam,
-    };
-    activeLayerType.value = feature.layerType || null; // ← 新增
-  } else {
+  if (!feature) {
     selectedItem.value = null;
     activeLayerType.value = null;
+    return;
   }
+
+  // 如果是完整记录（通常会包含 id/_id 或 originPort/destinationPort 等字段）
+  const looksLikeFullRecord =
+    Boolean(feature.id) ||
+    Boolean(feature._id) ||
+    Boolean(feature.originPort) ||
+    Boolean(feature.destinationPort) ||
+    Boolean(feature.trackID) ||
+    Boolean(feature.mmsi);
+
+  if (looksLikeFullRecord) {
+    selectedItem.value = feature;
+    // 优先使用内部标记的 _layerType（我们在 InfoLogistic 点击时添加了），若无则尝试 layerType 字段，否则默认 logistic
+    activeLayerType.value =
+      feature._layerType || feature.layerType || "logistic";
+    return;
+  }
+
+  // 否则仍按原来的 locCode / locNaam 方式处理（水信息）
+  selectedItem.value = {
+    locCode: feature.locCode,
+    locNaam: feature.locNaam,
+  };
+  activeLayerType.value = feature.layerType || null;
 }
+
 // 处理测量数据加载事件
 function handleMeasurementLoaded(data) {
   measurementData.value = data;
@@ -724,7 +746,7 @@ onMounted(() => {
 
       <!-- 右侧两块 -->
       <div class="overlay right">
-        <component :is="InfoC" />
+        <component :is="InfoC" @feature-clicked="handleFeatureClick" />
         <component :is="InfoD" />
       </div>
 
@@ -788,6 +810,10 @@ onMounted(() => {
             :record="selectedItem"
             @locate="onLocateNotice"
             @subscribe="onSubscribeNotice"
+          />
+          <LogisticInfo
+            v-if="selectedItem && activeLayerType === 'logistic'"
+            :record="selectedItem"
           />
         </template>
 

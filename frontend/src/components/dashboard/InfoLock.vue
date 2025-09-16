@@ -496,7 +496,7 @@ function buildOptionFor(isrs) {
       showSymbol: true,
       data: upstream,
       lineStyle: { width: 1.5, color: '#409eff' },   // ← Upstream 线颜色
-      itemStyle: { color: '#3B82F6' },              // ← 数据点颜色
+      itemStyle: { color: '#409eff' },              // ← 数据点颜色
     },
     {
       name: "Downstream",

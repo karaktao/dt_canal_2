@@ -106,3 +106,8 @@ defineExpose({
   getLayer: () => lockLayer,
 });
 </script>
+
+
+<template>
+  <div style="display:none"></div>
+</template>

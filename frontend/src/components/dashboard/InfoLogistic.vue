@@ -3,8 +3,12 @@ import { ref, computed, onMounted, watch } from "vue";
 import dayjs from "dayjs";
 import { listPublish } from "@/api/transport/publish"; // 与 postcargo.vue 一致的接口
 
+// 定义 emit（和其它 map / layer 组件做法一致）
+const emit = defineEmits(["feature-clicked"]);
+
 // 数据源（合并后的）
 const rawRecords = ref([]);
+
 
 // 控制勾选框
 const cargoChecked = ref(true);   // 默认保持原来行为：cargo 是勾选的
@@ -13,7 +17,7 @@ const vesselChecked = ref(false);
 // 基础请求：分别请求 cargo_to_vessel / vessel_to_cargo，并标注来源
 const fetchCargo = async () => {
   try {
-    const res = await listPublish({ assignmentType: "cargo_to_vessel" });
+    const res = await listPublish({ assignmentType: "cargo_to_vessel" , pageSize: 1000});
     const rows = res?.rows || (res?.data ? res.data.rows : []) || [];
     // 标注来源
     return (rows || []).map(r => ({ ...r, _source: "cargo" }));
@@ -25,7 +29,7 @@ const fetchCargo = async () => {
 
 const fetchVessel = async () => {
   try {
-    const res = await listPublish({ assignmentType: "vessel_to_cargo" });
+    const res = await listPublish({ assignmentType: "vessel_to_cargo" , pageSize: 1000});
     const rows = res?.rows || (res?.data ? res.data.rows : []) || [];
     return (rows || []).map(r => ({ ...r, _source: "vessel" }));
   } catch (e) {
@@ -56,12 +60,19 @@ const reloadRecords = async () => {
       // 若已有，保留已有（不覆盖），但如果你希望以某来源优先可以调整
       if (!map.has(key)) map.set(key, item);
     });
-    rawRecords.value = Array.from(map.values());
+
+    rawRecords.value = Array.from(map.values()).sort((a,b) => {
+  if (!a?.departureStart) return 1;
+  if (!b?.departureStart) return -1;
+  return dayjs(a.departureStart).valueOf() - dayjs(b.departureStart).valueOf();
+});
+
   } catch (e) {
     console.error("reloadRecords failed", e);
     rawRecords.value = [];
   }
 };
+
 
 // 按出发日期分组（保留原有分组行为）
 const recordsByDepartureStart = computed(() => {
@@ -71,6 +82,51 @@ const recordsByDepartureStart = computed(() => {
     return groups;
   }, {});
 });
+
+// 当用户点击某条记录时发出事件给父组件
+function onRecordClick(record, e) {
+  // 阻止事件冒泡（必要时）
+  if (e && e.stopPropagation) e.stopPropagation();
+
+  // 我们把原始 record 透传，同时添加一个 layer 类型，用于父组件区分
+  const payload = { ...record, _layerType: "logistic" };
+console.log("[InfoLogistic] emit feature-clicked:", payload);
+emit("feature-clicked", payload);
+}
+
+// InfoLogistic.vue - 添加 applySaved & defineExpose
+
+function applySaved(saved) {
+  if (!saved) return;
+  const id = saved.id ?? saved._id;
+  // 找到在 rawRecords 中的位置（用 id 或 _id）
+  const idx = rawRecords.value.findIndex(
+    (r) => (r.id ?? r._id) == id
+  );
+  if (idx >= 0) {
+    // 用 splice 替换，保持响应性；合并保留原有未提交字段
+    rawRecords.value.splice(idx, 1, { ...rawRecords.value[idx], ...saved });
+  } else {
+    // 如果列表中没有该条，则把它插到最前（按需）
+    rawRecords.value.unshift(saved);
+  }
+
+  // 可选：按 departureStart 再次排序与分组一致性
+  rawRecords.value.sort((a, b) => {
+    if (!a?.departureStart) return 1;
+    if (!b?.departureStart) return -1;
+    return dayjs(a.departureStart).valueOf() - dayjs(b.departureStart).valueOf();
+  });
+}
+
+// 暴露给父组件调用
+defineExpose({
+  reloadRecords,
+  applySaved,
+});
+
+
+
 
 // 当勾选变化时自动刷新
 watch([cargoChecked, vesselChecked], () => {
@@ -113,8 +169,9 @@ onMounted(async () => {
               record._id ||
               record.originPort + record.destinationPort + record.departureStart
             "
-            class="record-card"
+            class="record-card clickable"
             shadow="hover"
+            @click="onRecordClick(record, $event)" 
           >
             <!-- 单行显示：时间 HH:mm  小间隔  DD-MM   出发地 → 目的地 -->
             <div class="record-line">
@@ -216,6 +273,16 @@ margin-bottom: 1px; /* 紧贴上方 panel */
   align-items: center;
   gap: 12px;
   width: 100%;
+}
+
+/* 新：可点击样式 */
+.record-card.clickable {
+  cursor: pointer;
+}
+.record-card.clickable:hover {
+  transform: translateY(-2px);
+  transition: transform 120ms ease;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.15);
 }
 
 /* 时间块（左）*/

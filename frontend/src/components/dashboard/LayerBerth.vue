@@ -106,3 +106,8 @@ defineExpose({
   getLayer: () => berthLayer,
 });
 </script>
+
+
+<template>
+  <div style="display:none"></div>
+</template>

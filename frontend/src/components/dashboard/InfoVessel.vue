@@ -331,6 +331,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   background: #ffffff27;
   border-radius: 10px; 
+  border: 0.1px solid rgba(250, 250, 250, 0.6);
 }
 
 /* 左列样式 */

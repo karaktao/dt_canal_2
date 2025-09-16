@@ -106,3 +106,8 @@ defineExpose({
   getLayer: () => bridgeLayer,
 });
 </script>
+
+
+<template>
+  <div style="display:none"></div>
+</template>

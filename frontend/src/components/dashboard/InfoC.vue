@@ -6,19 +6,66 @@
 
     <InfoVessel class="panel vessel-panel" />
 
-    <InfoLogistic class="panel logistic-panel" />
+    <InfoLogistic
+      ref="infoListRef"
+      class="panel logistic-panel"
+      @feature-clicked="$emit('feature-clicked', $event)"
+      @edit="onEditRecord"
+    />
 
     <div class="section-header">
       <span class="title">Notices</span>
     </div>
     <InfoNotice class="panel notice-panel" />
+
+    <!-- LogisticInfo 放在父组件里，由父组件控制显示/关闭 -->
+    <!-- 这里用 v-if 控制显示；你也可以改为用 <el-dialog> 包裹 LogisticInfo -->
+    <LogisticInfo
+      v-if="showLogisticEditor"
+      :record="editingRecord"
+      @saved="onLogisticSaved"
+      @close="closeLogisticEditor"
+    />
   </el-card>
 </template>
 
 <script setup>
+import { ref } from "vue";
 import InfoVessel from "./InfoVessel.vue";
 import InfoLogistic from "./InfoLogistic.vue";
 import InfoNotice from "./InfoNotice.vue";
+import LogisticInfo from "./LogisticInfo.vue";
+
+
+// ref 指向 InfoLogistic 以便调用其 reloadRecords/applySaved
+const infoListRef = ref(null);
+
+// 用于控制 LogisticInfo 编辑器显示与传入 record
+const showLogisticEditor = ref(false);
+const editingRecord = ref(null);
+
+// 当 InfoLogistic 中某条记录请求编辑时触发（InfoLogistic 应 emit('edit', record)）
+function onEditRecord(record) {
+  editingRecord.value = record || null;
+  showLogisticEditor.value = true;
+}
+
+// 当 LogisticInfo 保存成功后触发：刷新 InfoLogistic
+function onLogisticSaved(savedRecord) {
+  // 推荐方式：重新拉取列表（更保险）
+  infoListRef.value?.reloadRecords?.();
+
+  // 如果你更喜欢局部更新（后端返回完整 savedRecord），也可以：
+  // infoListRef.value?.applySaved?.(savedRecord);
+
+  // 关闭编辑器
+  showLogisticEditor.value = false;
+}
+
+// 关闭编辑器（LogisticInfo 可 emit 'close'）
+function closeLogisticEditor() {
+  showLogisticEditor.value = false;
+}
 </script>
 
 <style >

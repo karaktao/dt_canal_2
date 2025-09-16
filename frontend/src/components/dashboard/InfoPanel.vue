@@ -15,20 +15,6 @@
         @pointerdown.prevent="startDrag"     
       ></div>
 
-      <!-- 头部：标题 + 关闭按钮 -->
-      <template #header>
-        <div class="header">
-          <span class="title">{{ title }}</span>
-          <el-button
-            icon="el-icon-close"
-            type="text"
-            circle
-            @click="$emit('close')"
-            aria-label="关闭"
-          />
-        </div>
-      </template>
-
       <!-- 主体内容：默认渲染 item 的字段，也可通过 slot 覆盖 -->
       <slot name="content">
         <p v-for="(val, key) in item" :key="key">
@@ -114,6 +100,7 @@ onBeforeUnmount(() => {
   font-size: 0.8em;
   opacity: 0.9;
   transition: backdrop-filter .2s; 
+  background:rgba(255, 255, 255, 0.3);
 }
 .info-panel.dragging {                   
   backdrop-filter: none;

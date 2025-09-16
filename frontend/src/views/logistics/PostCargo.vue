@@ -423,7 +423,7 @@ function onRecordClick(record) {
 const reloadRecords = async () => {
   try {
     const res = await listPublish({
-      assignmentType: "cargo_to_vessel",
+      assignmentType: "cargo_to_vessel", pageSize: 1000
     });
     if (res.code === 200) {
       rawRecords.value = res.rows;
