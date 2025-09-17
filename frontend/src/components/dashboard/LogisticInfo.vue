@@ -1,4 +1,4 @@
-<!-- components/dashboard/LogisticInfo.vue (with inline edit/save) -->
+<!-- components/dashboard/LogisticInfo.vue -->
 <template>
   <el-card shadow="never" class="logistic-info-card">
     <div class="header">
@@ -7,7 +7,6 @@
         <div class="sub">{{ formatSubtitle }}</div>
       </div>
 
-      <!-- 右侧控制：显示更多开关 + 编辑按钮 -->
       <div class="controls">
         <el-tooltip content="切换显示全部物流字段" placement="top">
           <el-switch
@@ -42,54 +41,18 @@
       </div>
     </div>
 
-    <!-- 基础摘要信息（只读） -->
-    <el-descriptions :column="3" border size="small" class="summary">
-      <el-descriptions-item label="ID">{{
-        fmt(record.id)
-      }}</el-descriptions-item>
-      <el-descriptions-item label="Source">{{
-        fmt(record._source)
-      }}</el-descriptions-item>
-
-      <el-descriptions-item label="Origin">{{
-        fmt(record.originCity || record.originPort)
-      }}</el-descriptions-item>
-      <el-descriptions-item label="Destination">{{
-        fmt(record.destinationCity || record.destinationPort)
-      }}</el-descriptions-item>
-
-      <el-descriptions-item label="Departure">{{
-        formatTime(record.departureStart)
-      }}</el-descriptions-item>
-      <el-descriptions-item label="ETA">{{
-        formatTime(
-          record.arrivalEstimate || record.arrivalEnd || record.departureEnd
-        )
-      }}</el-descriptions-item>
-
-      <el-descriptions-item label="Cargo Type">{{
-        fmt(record.cargoType || record.goods)
-      }}</el-descriptions-item>
-      <el-descriptions-item label="Tonnage Demand">{{
-        fmtNumber(record.tonnageDemand)
-      }}</el-descriptions-item>
-
-      <el-descriptions-item label="Available Tonnage">{{
-        fmtNumber(record.tonnageAvailable)
-      }}</el-descriptions-item>
-      <el-descriptions-item label="Priority">{{
-        fmt(record.prioritySetting)
-      }}</el-descriptions-item>
-
-      <el-descriptions-item label="Status">{{
-        fmt(record.status)
-      }}</el-descriptions-item>
-      <el-descriptions-item label="Notes">{{
-        fmt(record.remarks || record.remark)
-      }}</el-descriptions-item>
+    <!-- 动态摘要信息（根据 assignmentType） -->
+    <el-descriptions :column="2" border size="small" class="summary">
+      <el-descriptions-item
+        v-for="(lbl, idx) in summaryFields"
+        :key="'summary-' + lbl + '-' + idx"
+        :label="labelMap[lbl] || lbl"
+      >
+        <div v-html="fieldHtml(lbl)"></div>
+      </el-descriptions-item>
     </el-descriptions>
 
-    <!-- 编辑模式：在 InfoPanel 里直接呈现表单 -->
+    <!-- 编辑/更多区域 -->
     <transition name="fade">
       <div v-if="showMore" class="more-section">
         <div
@@ -106,7 +69,7 @@
         <!-- 只读视图（非编辑） -->
         <el-descriptions
           v-if="!editMode"
-          :column="3"
+          :column="2"
           border
           size="small"
           class="logistic-descriptions"
@@ -114,7 +77,7 @@
           <el-descriptions-item
             v-for="(item, idx) in allFields"
             :key="item.label + '-' + idx"
-            :label="item.label"
+            :label="labelMap[item.label] || item.label"
           >
             <div class="desc-value" :title="stripHtml(item.html)">
               {{ plainText(item.html) }}
@@ -122,7 +85,7 @@
           </el-descriptions-item>
         </el-descriptions>
 
-        <!-- 编辑表单（直接在 InfoPanel 编辑） -->
+        <!-- 编辑视图 -->
         <el-form
           v-if="editMode"
           ref="editFormRef"
@@ -131,144 +94,142 @@
           label-position="top"
           class="edit-form"
         >
-          <el-row :gutter="12">
-            <!-- Origin / Destination with autocomplete -->
-            <el-col :span="12">
-              <el-form-item label="Origin Port" prop="originPort">
-                <el-autocomplete
-                  v-model="editForm.originPort"
-                  :fetch-suggestions="querySearchBerths"
-                  placeholder="Enter origin port"
-                  @select="handleOriginPortSelect"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="Destination Port" prop="destinationPort">
-                <el-autocomplete
-                  v-model="editForm.destinationPort"
-                  :fetch-suggestions="querySearchBerths"
-                  placeholder="Enter destination port"
-                  @select="handleDestinationPortSelect"
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="12">
-            <el-col :span="12">
-              <el-form-item label="Departure Start" prop="departureStart">
-                <el-date-picker
-                  v-model="editForm.departureStart"
-                  type="datetime"
-                  value-format="YYYY-MM-DD HH:mm:ss"
-                  placeholder="Departure start"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="Departure End" prop="departureEnd">
-                <el-date-picker
-                  v-model="editForm.departureEnd"
-                  type="datetime"
-                  value-format="YYYY-MM-DD HH:mm:ss"
-                  placeholder="Departure end"
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="12">
-            <el-col :span="12">
-              <el-form-item label="Arrival Start" prop="arrivalStart">
-                <el-date-picker
-                  v-model="editForm.arrivalStart"
-                  type="datetime"
-                  value-format="YYYY-MM-DD HH:mm:ss"
-                  placeholder="Arrival start"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="Arrival End" prop="arrivalEnd">
-                <el-date-picker
-                  v-model="editForm.arrivalEnd"
-                  type="datetime"
-                  value-format="YYYY-MM-DD HH:mm:ss"
-                  placeholder="Arrival end"
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="12">
-            <el-col :span="8">
-              <el-form-item label="Cargo Type" prop="cargoType">
-                <el-input v-model="editForm.cargoType" />
-              </el-form-item>
-            </el-col>
-
-            <el-col :span="8">
-              <el-form-item label="Tonnage Demand" prop="tonnageDemand">
-                <el-input-number
-                  v-model="editForm.tonnageDemand"
-                  :step="0.01"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-
-            <el-col :span="8">
-              <el-form-item label="Available Tonnage" prop="tonnageAvailable">
-                <el-input-number
-                  v-model="editForm.tonnageAvailable"
-                  :step="0.01"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="12">
-            <el-col :span="8">
-              <el-form-item label="Priority" prop="prioritySetting">
-                <el-select
-                  v-model="editForm.prioritySetting"
-                  placeholder="Select"
+          <el-descriptions
+            :column="2"
+            border
+            size="small"
+            class="logistic-descriptions"
+          >
+            <el-descriptions-item
+              v-for="(item, idx) in allFields"
+              :key="'edit-' + item.label + '-' + idx"
+              :label="labelMap[item.label] || item.label"
+            >
+              <template v-if="isEditableField(item.label)">
+                <div
+                  v-if="
+                    [
+                      'originPort',
+                      'destinationPort',
+                      'returnDestinationPort',
+                    ].includes(item.label)
+                  "
                 >
-                  <el-option label="low" value="low" />
-                  <el-option label="med" value="med" />
-                  <el-option label="high" value="high" />
-                </el-select>
-              </el-form-item>
-            </el-col>
+                  <el-form-item
+                    :prop="mapLabelToProp(item.label)"
+                    style="margin: 0"
+                  >
+                    <el-autocomplete
+                      v-model="editForm[mapLabelToProp(item.label)]"
+                      :fetch-suggestions="querySearchBerths"
+                      placeholder="Enter port"
+                      @select="onPortSelectForLabel(item.label, $event)"
+                      clearable
+                    />
+                  </el-form-item>
+                </div>
 
-            <el-col :span="8">
-              <el-form-item label="Status" prop="status">
-                <el-select v-model="editForm.status" placeholder="Select">
-                  <el-option label="open" value="open" />
-                  <el-option label="assigned" value="assigned" />
-                  <el-option label="closed" value="closed" />
-                </el-select>
-              </el-form-item>
-            </el-col>
+                <div v-else-if="isDateField(item.label)">
+                  <el-form-item
+                    :prop="mapLabelToProp(item.label)"
+                    style="margin: 0"
+                  >
+                    <el-date-picker
+                      v-model="editForm[mapLabelToProp(item.label)]"
+                      type="datetime"
+                      value-format="YYYY-MM-DD HH:mm:ss"
+                      placeholder="Select date/time"
+                      clearable
+                    />
+                  </el-form-item>
+                </div>
 
-            <el-col :span="8">
-              <el-form-item label="Vessel Name" prop="vesselName">
-                <el-input v-model="editForm.vesselName" />
-              </el-form-item>
-            </el-col>
-          </el-row>
+                <div v-else-if="isNumberField(item.label)">
+                  <el-form-item
+                    :prop="mapLabelToProp(item.label)"
+                    style="margin: 0"
+                  >
+                    <el-input-number
+                      v-model="editForm[mapLabelToProp(item.label)]"
+                      :step="0.01"
+                      style="width: 100%"
+                    />
+                  </el-form-item>
+                </div>
 
-          <el-row :gutter="12">
-            <el-col :span="24">
-              <el-form-item label="Remarks" prop="remarks">
-                <el-input type="textarea" v-model="editForm.remarks" :rows="2" />
-              </el-form-item>
-            </el-col>
-          </el-row>
+                <div
+                  v-else-if="['prioritySetting', 'status'].includes(item.label)"
+                >
+                  <el-form-item
+                    :prop="mapLabelToProp(item.label)"
+                    style="margin: 0"
+                  >
+                    <el-select
+                      v-model="editForm[mapLabelToProp(item.label)]"
+                      placeholder="Select"
+                    >
+                      <el-option
+                        v-for="opt in optionsForField(item.label)"
+                        :key="opt.value"
+                        :label="opt.label"
+                        :value="opt.value"
+                      />
+                    </el-select>
+                  </el-form-item>
+                </div>
 
-          <!-- 可继续扩展更多可编辑字段 -->
+                <div
+                  v-else-if="
+                    [
+                      'cargoType',
+                      'vesselName',
+                      'containerId',
+                      'containerDemand',
+                    ].includes(item.label)
+                  "
+                >
+                  <el-form-item
+                    :prop="mapLabelToProp(item.label)"
+                    style="margin: 0"
+                  >
+                    <el-input
+                      v-model="editForm[mapLabelToProp(item.label)]"
+                      clearable
+                    />
+                  </el-form-item>
+                </div>
+
+                <div v-else-if="item.label === 'remarks'">
+                  <el-form-item prop="remarks" style="margin: 0">
+                    <el-input
+                      type="textarea"
+                      v-model="editForm.remarks"
+                      :rows="2"
+                      clearable
+                    />
+                  </el-form-item>
+                </div>
+
+                <div v-else>
+                  <el-form-item
+                    :prop="mapLabelToProp(item.label)"
+                    style="margin: 0"
+                  >
+                    <el-input
+                      v-model="editForm[mapLabelToProp(item.label)]"
+                      clearable
+                    />
+                  </el-form-item>
+                </div>
+              </template>
+
+              <template v-else>
+                <div class="desc-value" :title="stripHtml(item.html)">
+                  {{ plainText(item.html) }}
+                </div>
+              </template>
+            </el-descriptions-item>
+          </el-descriptions>
         </el-form>
       </div>
     </transition>
@@ -276,39 +237,283 @@
 </template>
 
 <script setup>
-import {
-  ref,
-  computed,
-  reactive,
-  toRef,
-  nextTick,
-  getCurrentInstance,
-} from "vue";
+import { ref, computed, reactive, toRef, nextTick, watch } from "vue";
 import dayjs from "dayjs";
 import { ElMessage } from "element-plus";
 
-// 引入后端 API（与 postcargo 一致）
 import { listBerth } from "@/api/infrastructure/berth";
 import { updatePublish } from "@/api/transport/publish";
 
-// props
 const props = defineProps({
-  record: { type: Object, default: () => ({}) }, // 当前展示的记录（只读）
+  record: { type: Object, default: () => ({}) },
 });
 const record = toRef(props, "record");
 
-// state
 const showMore = ref(false);
 const editMode = ref(false);
 const saving = ref(false);
 const editFormRef = ref(null);
-
-// 编辑表单模型（复制 record）
 const editForm = reactive({});
 
-// 当进入编辑时把 record 复制到 editForm
+// -------------- assignmentType-based field definitions --------------
+// 你可以按需在这里调整每种类型要显示的字段顺序与内容
+const FIELDS_CARGO_TO_VESSEL = [
+  "tenantId",
+  "assignmentType",
+  "originPort",
+  "destinationPort",
+  "originCity",
+  "destinationCity",
+  "departureStart",
+  "departureEnd",
+  "arrivalEstimate",
+  "cargoType",
+  "tonnageDemand",
+  // "volumeDemand",
+  "containerDemand",
+  "tonnageAvailable",
+  "isReturnTripAvailable",
+  "returnDestinationPort",
+  "prioritySetting",
+  "status",
+  "remarks",
+];
+
+const FIELDS_VESSEL_TO_CARGO = [
+  "tenantId",
+  "assignmentType",
+  "vesselName",
+  "tonnageAvailable",
+  // "volumeAvailable",
+  "containerAvailable",
+  "vesselAvailabilityStart",
+  "vesselAvailabilityEnd",
+  "originPort",
+  "destinationPort",
+  "originCity",
+  "destinationCity",
+  // "departureStart",
+  // "arrivalStart",
+  // "arrivalEnd",
+  // "prioritySetting",
+  "status",
+  "isEmptyVessel",
+  "remarks",
+];
+
+// default fallback: show union of both
+const FIELDS_ALL_FALLBACK = Array.from(
+  new Set([...FIELDS_CARGO_TO_VESSEL, ...FIELDS_VESSEL_TO_CARGO])
+);
+
+// 显示在摘要（summary）中的字段：按类型区分、可自定义顺序
+const SUMMARY_CARGO = [
+  "originPort",
+  "destinationPort",
+  "Departure",
+  "ETA",
+  "tonnageDemand",
+  "cargoType",
+  "Priority",
+  "status",
+];
+const SUMMARY_VESSEL = [
+  "originPort",
+  "destinationPort",
+  "vesselName",
+  "tonnageAvailable",
+  "Departure",
+  "ETA",
+  "status",
+];
+
+// label 人性化映射（显示名）
+const labelMap = {
+  tenantId: "Tenant",
+  assignmentType: "Type",
+  cargoType: "Cargo Type",
+  tonnageDemand: "Tonnage Demand",
+  volumeDemand: "Volume Demand",
+  containerDemand: "Container Demand",
+  vesselName: "Vessel Name",
+  isEmptyVessel: "Is Empty Vessel",
+  tonnageAvailable: "Available Tonnage",
+  volumeAvailable: "Available Volume",
+  containerAvailable: "Available Containers",
+  vesselAvailabilityStart: "Vessel Avail Start",
+  vesselAvailabilityEnd: "Vessel Avail End",
+  originPort: "Origin Port",
+  destinationPort: "Destination Port",
+  originCity: "Origin City",
+  destinationCity: "Destination City",
+  departureStart: "Departure",
+  departureEnd: "Departure End",
+  arrivalStart: "Arrival Start",
+  arrivalEnd: "Arrival End",
+  arrivalEstimate: "ETA",
+  returnDestinationPort: "Return Destination",
+  isReturnTripAvailable: "Return Trip?",
+  prioritySetting: "Priority",
+  status: "Status",
+  remarks: "Notes",
+};
+
+// reactive computed: 所有字段（用于 more-section）
+// 根据 record.assignmentType 选择不同的字段集并构造 {label, html}
+const allFields = computed(() => {
+  const r = record.value || {};
+  const assignment = (r.assignmentType || "").toLowerCase();
+  let fieldKeys = FIELDS_ALL_FALLBACK;
+  if (assignment === "cargo_to_vessel") fieldKeys = FIELDS_CARGO_TO_VESSEL;
+  else if (assignment === "vessel_to_cargo") fieldKeys = FIELDS_VESSEL_TO_CARGO;
+
+  // 生成字段对象
+  return fieldKeys.map((k) => {
+    return { label: k, html: escapeHtml(computeFieldHtml(k, r)) };
+  });
+});
+
+// summary fields computed（动态）
+const summaryFields = computed(() => {
+  const r = record.value || {};
+  const assignment = (r.assignmentType || "").toLowerCase();
+  if (assignment === "cargo_to_vessel") return SUMMARY_CARGO;
+  if (assignment === "vessel_to_cargo") return SUMMARY_VESSEL;
+  // fallback: pick some common fields
+  return [
+    "originPort",
+    "destinationPort",
+    "departureStart",
+    "arrivalEstimate",
+    "status",
+  ];
+});
+
+// helper to compute single field html (string) for label
+function computeFieldHtml(label, r) {
+  // special labels for human-friendly "Departure"/"ETA" in summary: keep names as in SUMMARY arrays
+  if (label === "Departure" || label === "ETA") {
+    // map to actual props
+    if (label === "Departure")
+      return formatTime(
+        r.departureStart || r.vesselAvailabilityStart || r.departureEnd
+      );
+    if (label === "ETA")
+      return formatTime(r.arrivalEstimate || r.arrivalEnd || r.arrivalStart);
+  }
+
+  // standard mapping from label to record property
+  switch (label) {
+    case "tenantId":
+      return fmt(r.tenantId);
+    case "assignmentType":
+      return fmt(r.assignmentType);
+    case "cargoType":
+      return fmt(r.cargoType || r.goods);
+    case "tonnageDemand":
+      return fmtNumber(r.tonnageDemand);
+    case "volumeDemand":
+      return fmtNumber(r.volumeDemand);
+    case "containerDemand":
+      return fmt(r.containerDemand);
+    case "vesselName":
+      return fmt(r.vesselName);
+    case "isEmptyVessel":
+      return fmt(r.isEmptyVessel);
+    case "tonnageAvailable":
+      return fmtNumber(r.tonnageAvailable);
+    case "volumeAvailable":
+      return fmtNumber(r.volumeAvailable);
+    case "containerAvailable":
+      return fmt(r.containerAvailable);
+    case "vesselAvailabilityStart":
+      return formatTime(r.vesselAvailabilityStart);
+    case "vesselAvailabilityEnd":
+      return formatTime(r.vesselAvailabilityEnd);
+    case "originPort":
+      return fmt(r.originPort);
+    case "destinationPort":
+      return fmt(r.destinationPort);
+    case "originCity":
+      return fmt(r.originCity);
+    case "destinationCity":
+      return fmt(r.destinationCity);
+    case "departureStart":
+      return formatTime(r.departureStart);
+    case "departureEnd":
+      return formatTime(r.departureEnd);
+    case "arrivalStart":
+      return formatTime(r.arrivalStart);
+    case "arrivalEnd":
+      return formatTime(r.arrivalEnd);
+    case "arrivalEstimate":
+      return formatTime(r.arrivalEstimate);
+    case "returnDestinationPort":
+      return fmt(r.returnDestinationPort);
+    case "isReturnTripAvailable":
+      return fmt(r.isReturnTripAvailable);
+    case "prioritySetting":
+      return fmt(r.prioritySetting);
+    case "status":
+      return fmt(r.status);
+    case "remarks":
+      return fmt(r.remarks || r.remark);
+    case "Priority":
+      return fmt(r.prioritySetting);
+    default:
+      // fallback: try to output property with same name
+      return fmt(r[label]);
+  }
+}
+
+// 用于 summary template 获取字段 html（会被 escapeHtml 再次包裹）
+function fieldHtml(label) {
+  const r = record.value || {};
+  return escapeHtml(computeFieldHtml(label, r));
+}
+
+/* helper format / utils (保留你原来的实现) */
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "—";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+function stripHtml(s) {
+  if (!s) return "";
+  return String(s)
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+}
+function plainText(s) {
+  return stripHtml(s);
+}
+function fmt(v) {
+  if (v === null || v === undefined || v === "") return "—";
+  return String(v);
+}
+function fmtNumber(v) {
+  if (v === null || v === undefined || v === "") return "—";
+  if (typeof v === "number") return v.toLocaleString();
+  const n = Number(v);
+  return isNaN(n) ? String(v) : n.toLocaleString();
+}
+function formatTime(v) {
+  if (!v) return "—";
+  try {
+    const dt = new Date(v);
+    if (isNaN(dt.getTime())) return String(v);
+    return dt.toLocaleString();
+  } catch (e) {
+    return String(v);
+  }
+}
+
+/* ========== 编辑相关 ========== */
+// enterEdit: 把 record 的字段复制到 editForm（覆盖并包含两类字段）
 function enterEdit() {
-  // shallow copy fields we care about (or copy all)
   const r = record.value || {};
   Object.assign(editForm, {
     id: r.id,
@@ -358,19 +563,13 @@ function enterEdit() {
     remarks: r.remarks,
   });
   editMode.value = true;
-  // 确保显示更多已经打开
   showMore.value = true;
-  nextTick(() => {
-    // focus first field if needed
-  });
+  nextTick(() => {});
 }
-
-// 取消编辑：恢复并退出
 function cancelEdit() {
   editMode.value = false;
 }
 
-// 表单规则（简单示例）
 const editRules = {
   originPort: [{ required: true, message: "Origin required", trigger: "blur" }],
   destinationPort: [
@@ -379,51 +578,33 @@ const editRules = {
   departureStart: [
     { required: true, message: "Departure start required", trigger: "change" },
   ],
-  arrivalStart: [
-    { required: true, message: "Arrival start required", trigger: "change" },
-  ],
 };
 
-// 使用 defineEmits（script setup 专用）
-const emit = defineEmits(['saved']);
+const emit = defineEmits(["saved"]);
 
-// 保存（调用 updatePublish）
-// LogisticInfo.vue - 替换 onSave() 实现为：
 async function onSave() {
   try {
     await editFormRef.value.validate();
   } catch (e) {
     return;
   }
-
   saving.value = true;
   try {
-    const payload = { ...editForm };
-    payload.id = editForm.id;
-
-    // 等待后端返回
+    const payload = { ...editForm, id: editForm.id };
     const res = await updatePublish(payload);
-
-    // 后端返回的记录优先使用 res.data（根据你的后端返回结构调整）
     const savedRecord = res?.data ?? res ?? payload;
-
-    ElMessage.success("保存成功");
+    ElMessage.success("Save Successful");
     editMode.value = false;
-
-    // 把保存后的记录发给父组件
     emit("saved", savedRecord);
   } catch (err) {
-    console.error("保存失败", err);
-    ElMessage.error("保存失败");
+    console.error("Save failed", err);
+    ElMessage.error("Save failed");
   } finally {
     saving.value = false;
   }
 }
 
-
-
-/* ========== 港口模糊搜索（参考 postcargo） ========== */
-const berthOptions = ref([]);
+/* 港口模糊搜索（保留） */
 async function querySearchBerths(queryString, cb) {
   if (!queryString) {
     cb([]);
@@ -451,170 +632,121 @@ async function querySearchBerths(queryString, cb) {
   }
 }
 
-function handleOriginPortSelect(selected) {
-  editForm.originPort = selected.value;
-  editForm.originPortId = selected.berthIsrs;
-  editForm.originLat = selected.berthLatitude;
-  editForm.originLon = selected.berthLongitude;
-  editForm.originCity = selected.city || "";
-}
-
-function handleDestinationPortSelect(selected) {
-  editForm.destinationPort = selected.value;
-  editForm.destinationPortId = selected.berthIsrs;
-  editForm.destLat = selected.berthLatitude;
-  editForm.destLon = selected.berthLongitude;
-  editForm.destinationCity = selected.city || "";
-}
-
-/* ========== 其它辅助函数 ========== */
-function fmt(v) {
-  if (v === null || v === undefined || v === "") return "—";
-  return String(v);
-}
-function fmtNumber(v) {
-  if (v === null || v === undefined || v === "") return "—";
-  if (typeof v === "number") return v.toLocaleString();
-  const n = Number(v);
-  return isNaN(n) ? String(v) : n.toLocaleString();
-}
-function formatTime(v) {
-  if (!v) return "—";
-  try {
-    const dt = new Date(v);
-    if (isNaN(dt.getTime())) return String(v);
-    return dt.toLocaleString();
-  } catch (e) {
-    return String(v);
+function onPortSelectForLabel(label, selected) {
+  const prop = mapLabelToProp(label);
+  if (!prop) return;
+  editForm[prop] = selected.value;
+  if (label === "originPort") {
+    editForm.originPortId = selected.berthIsrs;
+    editForm.originLat = selected.berthLatitude;
+    editForm.originLon = selected.berthLongitude;
+    editForm.originCity = selected.city || "";
+  } else if (label === "destinationPort") {
+    editForm.destinationPortId = selected.berthIsrs;
+    editForm.destLat = selected.berthLatitude;
+    editForm.destLon = selected.berthLongitude;
+    editForm.destinationCity = selected.city || "";
+  } else if (label === "returnDestinationPort") {
+    editForm.returnDestinationPortId = selected.berthIsrs;
   }
 }
 
-/* 生成 allFields（只读展示用）-- 保持原先 escapeHtml 处理 */
-function escapeHtml(str) {
-  if (str === null || str === undefined) return "—";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+/* 编辑字段映射 & 类型判断辅助（保留并可扩展） */
+const editableSet = new Set([
+  "originPort",
+  "destinationPort",
+  "returnDestinationPort",
+  "departureStart",
+  "departureEnd",
+  "arrivalStart",
+  "arrivalEnd",
+  "arrivalEstimate",
+  "vesselAvailabilityStart",
+  "vesselAvailabilityEnd",
+  "tonnageDemand",
+  "tonnageAvailable",
+  "volumeDemand",
+  "volumeAvailable",
+  "containerDemand",
+  "cargoType",
+  "vesselName",
+  "containerId",
+  "containerDemand",
+  "remarks",
+  "prioritySetting",
+  "status",
+]);
+
+function isEditableField(label) {
+  return editableSet.has(label);
 }
-const allFields = computed(() => {
-  const r = record.value || {};
-  // 与原版保持一致（简化部分长 JSON）
+function isDateField(label) {
   return [
-    { label: "createBy", html: escapeHtml(fmt(r.createBy)) },
-    { label: "createTime", html: escapeHtml(formatTime(r.createTime)) },
-    { label: "updateBy", html: escapeHtml(fmt(r.updateBy)) },
-    { label: "updateTime", html: escapeHtml(formatTime(r.updateTime)) },
-    { label: "remark", html: escapeHtml(fmt(r.remark)) },
-
-    { label: "id", html: escapeHtml(fmt(r.id)) },
-    { label: "tenantId", html: escapeHtml(fmt(r.tenantId)) },
-    { label: "assignmentType", html: escapeHtml(fmt(r.assignmentType)) },
-    { label: "publishedBy", html: escapeHtml(fmt(r.publishedBy)) },
-    { label: "publishedAt", html: escapeHtml(formatTime(r.publishedAt)) },
-
-    { label: "createdAt", html: escapeHtml(formatTime(r.createdAt)) },
-    { label: "assignedAt", html: escapeHtml(formatTime(r.assignedAt)) },
-    { label: "cargoType", html: escapeHtml(fmt(r.cargoType)) },
-    { label: "tonnageDemand", html: escapeHtml(fmtNumber(r.tonnageDemand)) },
-    { label: "volumeDemand", html: escapeHtml(fmtNumber(r.volumeDemand)) },
-
-    { label: "containerDemand", html: escapeHtml(fmt(r.containerDemand)) },
-    { label: "vesselId", html: escapeHtml(fmt(r.vesselId)) },
-    { label: "mmsiNumber", html: escapeHtml(fmt(r.mmsiNumber)) },
-    { label: "vesselName", html: escapeHtml(fmt(r.vesselName)) },
-    { label: "isEmptyVessel", html: escapeHtml(fmt(r.isEmptyVessel)) },
-
-    {
-      label: "tonnageAvailable",
-      html: escapeHtml(fmtNumber(r.tonnageAvailable)),
-    },
-    {
-      label: "volumeAvailable",
-      html: escapeHtml(fmtNumber(r.volumeAvailable)),
-    },
-    {
-      label: "containerAvailable",
-      html: escapeHtml(fmt(r.containerAvailable)),
-    },
-    {
-      label: "isReturnTripAvailable",
-      html: escapeHtml(fmt(r.isReturnTripAvailable)),
-    },
-
-    {
-      label: "vesselAvailabilityStart",
-      html: escapeHtml(formatTime(r.vesselAvailabilityStart)),
-    },
-    {
-      label: "vesselAvailabilityEnd",
-      html: escapeHtml(formatTime(r.vesselAvailabilityEnd)),
-    },
-
-    {
-      label: "returnDestinationPort",
-      html: escapeHtml(fmt(r.returnDestinationPort)),
-    },
-    {
-      label: "returnDestinationPortId",
-      html: escapeHtml(fmt(r.returnDestinationPortId)),
-    },
-
-    { label: "originPort", html: escapeHtml(fmt(r.originPort)) },
-    { label: "originPortId", html: escapeHtml(fmt(r.originPortId)) },
-    { label: "destinationPort", html: escapeHtml(fmt(r.destinationPort)) },
-    { label: "destinationPortId", html: escapeHtml(fmt(r.destinationPortId)) },
-
-    { label: "departureStart", html: escapeHtml(formatTime(r.departureStart)) },
-    { label: "departureEnd", html: escapeHtml(formatTime(r.departureEnd)) },
-    { label: "arrivalStart", html: escapeHtml(formatTime(r.arrivalStart)) },
-    { label: "arrivalEnd", html: escapeHtml(formatTime(r.arrivalEnd)) },
-    {
-      label: "arrivalEstimate",
-      html: escapeHtml(formatTime(r.arrivalEstimate)),
-    },
-
-    { label: "uploadTime", html: escapeHtml(formatTime(r.uploadTime)) },
-    { label: "unloadTime", html: escapeHtml(formatTime(r.unloadTime)) },
-    { label: "prioritySetting", html: escapeHtml(fmt(r.prioritySetting)) },
-    { label: "status", html: escapeHtml(fmt(r.status)) },
-
-    { label: "intermediatePorts", html: escapeHtml(fmt(r.intermediatePorts)) },
-    {
-      label: "intermediatePortsId",
-      html: escapeHtml(fmt(r.intermediatePortsId)),
-    },
-
-    { label: "originCity", html: escapeHtml(fmt(r.originCity)) },
-    { label: "destinationCity", html: escapeHtml(fmt(r.destinationCity)) },
-    { label: "isMerge", html: escapeHtml(fmt(r.isMerge)) },
-    { label: "isTransshipment", html: escapeHtml(fmt(r.isTransshipment)) },
-
-    { label: "containerId", html: escapeHtml(fmt(r.containerId)) },
-    { label: "remarks", html: escapeHtml(fmt(r.remarks)) },
-    { label: "_source", html: escapeHtml(fmt(r._source)) },
-    { label: "_layerType", html: escapeHtml(fmt(r._layerType)) },
-  ];
-});
-
-const formatSubtitle = computed(() => {
-  const from = record.value?.originCity || record.value?.originPort || "";
-  const to =
-    record.value?.destinationCity || record.value?.destinationPort || "";
-  return `${from} → ${to}`;
-});
-
-// helpers to strip html/return plain text (we use escapeHtml above)
-function stripHtml(s) {
-  if (!s) return "";
-  return String(s)
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&");
+    "departureStart",
+    "departureEnd",
+    "arrivalStart",
+    "arrivalEnd",
+    "arrivalEstimate",
+    "vesselAvailabilityStart",
+    "vesselAvailabilityEnd",
+  ].includes(label);
 }
-function plainText(s) {
-  // our values have been escaped; replace HTML entities
-  return stripHtml(s);
+function isNumberField(label) {
+  return [
+    "tonnageDemand",
+    "tonnageAvailable",
+    "volumeDemand",
+    "volumeAvailable",
+    "containerDemand",
+  ].includes(label);
+}
+
+function mapLabelToProp(label) {
+  const map = {
+    tenantId: "tenantId",
+    assignmentType: "assignmentType",
+    cargoType: "cargoType",
+    tonnageDemand: "tonnageDemand",
+    volumeDemand: "volumeDemand",
+    containerDemand: "containerDemand",
+    vesselName: "vesselName",
+    tonnageAvailable: "tonnageAvailable",
+    volumeAvailable: "volumeAvailable",
+    prioritySetting: "prioritySetting",
+    status: "status",
+    originPort: "originPort",
+    destinationPort: "destinationPort",
+    departureStart: "departureStart",
+    departureEnd: "departureEnd",
+    arrivalStart: "arrivalStart",
+    arrivalEnd: "arrivalEnd",
+    arrivalEstimate: "arrivalEstimate",
+    vesselAvailabilityStart: "vesselAvailabilityStart",
+    vesselAvailabilityEnd: "vesselAvailabilityEnd",
+    returnDestinationPort: "returnDestinationPort",
+    containerId: "containerId",
+    remarks: "remarks",
+  };
+  return map[label] ?? label;
+}
+
+function optionsForField(label) {
+  if (label === "prioritySetting") {
+    return [
+      { label: "shortest", value: "Shortest" },
+      { label: "fatest", value: "Fatest" },
+    ];
+  }
+  if (label === "status") {
+    return [
+      { label: "Published", value: "published" },
+      { label: "Assigned", value: "assigned" },
+      { label: "Completed", value: "completed" },
+      { label: "Unassigned", value: "unassigned" },
+      { label: "Shipping", value: "shipping" },
+    ];
+  }
+  return [];
 }
 </script>
 
@@ -649,48 +781,34 @@ function plainText(s) {
   margin-top: 12px;
 }
 
-/* descriptions 样式 */
+/* descriptions 样式 保持原来布局 */
 .logistic-descriptions {
   width: 100%;
-  table-layout: fixed; /* 固定表格布局，按宽度分配列 */
+  table-layout: fixed;
 }
-
 .logistic-descriptions .el-descriptions__cell {
   padding: 8px 12px;
   vertical-align: middle;
   box-sizing: border-box;
-  min-height: 48px; /* 防止单行高度不一致 */
+  min-height: 48px;
 }
-
 .logistic-descriptions .el-descriptions__label {
   width: 35%;
   display: inline-block;
   font-weight: 600;
-  white-space: nowrap; /* label 保持一行 */
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .logistic-descriptions .el-descriptions__content {
   width: 65%;
-  white-space: normal; /* 允许内容折行 */
-  word-break: break-word; /* 长单词/JSON 会换行 */
-}
-
-/* 针对非常长的 json/text，限制高度并滚动 */
-.logistic-descriptions .long-json {
-  max-height: 120px;
-  overflow: auto;
-  white-space: pre-wrap;
+  white-space: normal;
   word-break: break-word;
-  font-size: 12px;
 }
-
-/* 编辑表单 */
 .edit-form {
-  background: rgba(255, 255, 255, 0.6);
-  padding: 10px;
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 6px;
+  border-radius: 4px;
 }
 .fade-enter-active,
 .fade-leave-active {
@@ -699,5 +817,12 @@ function plainText(s) {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+.summary .el-descriptions__label {
+  font-weight: 600;
+}
+.desc-value {
+  white-space: normal;
+  word-break: break-word;
 }
 </style>

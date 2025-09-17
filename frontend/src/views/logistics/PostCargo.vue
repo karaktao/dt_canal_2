@@ -1,4 +1,8 @@
 <script setup>
+// 放在 script 顶部（与其他 const/let 一起）
+let _debounceTimer = null;
+const DEBOUNCE_MS = 450; // 防抖时间，可调整
+
 // 地图输入
 import MapCard from "@/components/MapCard.vue";
 import VectorLayer from "ol/layer/Vector";
@@ -276,147 +280,203 @@ function decodePolyline(str) {
 // rd转换为墨卡托并添加图层
 function addEurisPaths(paths) {
   const source = routeLayer.getSource();
+  // 不清空（如果需要每次清空请在调用处 clear），这里我们先 clear（和上游逻辑一致）
   source.clear();
 
-  paths.forEach((encoded, index) => {
-    if (!encoded || encoded.trim() === "") return;
-    const decoded = decodePolyline(encoded); // [y_in_km, x_in_km]
-    const projected = decoded.map(([lat, lon]) => fromLonLat([lon, lat])); // ✅ WGS84 → Web Mercator
-    const feature = new Feature({
-      geometry: new LineString(projected),
-    });
-    source.addFeature(feature);
-    // console.log("📍 解码前坐标:", encoded);
-    // console.log("📍 解码后坐标（未经处理）:", decoded);
-    // console.log("🗺️ 投影后墨卡托坐标:", projected);
-    // console.log("📌 添加路径数：", source.getFeatures().length);
-  });
+  for (const encoded of paths) {
+    if (!encoded || !encoded.trim()) continue;
+    try {
+      const decoded = decodePolyline(encoded); // 你的 decode 函数，返回 [lat, lon] 对数组
+      // decoded 里可能是 [lat, lon]（你已有实现是 lat then lon），确保投影顺序正确
+      const projected = decoded.map(([lat, lon]) => fromLonLat([lon, lat]));
+      const feat = new Feature({
+        geometry: new LineString(projected),
+      });
+      source.addFeature(feat);
+    } catch (e) {
+      console.warn("[Route] polyline 解码失败，跳过：", encoded, e);
+    }
+  }
 
-  // // 新增：保证地图尺寸最新
-  //     const map = mapCard.value?.map;
-  // if (!map) return;
-  // map.updateSize(); // 强制刷新容器尺寸
-  // map.renderSync(); // ← 确保尺寸生效
-  //
-  // // 计算并扩展 extent
-  //          let extent = source.getExtent();
-  // // 如果 extent 只有单个点，buffer 一下
-  //      if (extent[0] === extent[2] && extent[1] === extent[3]) {
-  //      extent = bufferExtent(extent, 10000); // 向外扩 10km
-  //    }
-  //
-  //      // 调用 fit 时显式传入地图大小
-  //          const size = map.getSize();
-  //  if (
-  //        Array.isArray(extent) &&
-  //        extent.every((c) => Number.isFinite(c)) &&
-  //        Array.isArray(size)
-  //      ) {
-  //      map.getView().fit(extent, {
-  //            padding: [80, 80, 80, 80],
-  //            size,
-  //            duration: 400
-  //      });
-  //    }
-
-  // —— 新增：保证地图尺寸最新 & 调试日志 ——
-  console.log("[Route] 开始 fit 流程"); // ← ①
+  // fit map view 到 routes（保留你原有 fit 流程）
   const map = mapCard.value?.map;
-  console.log("[Route] mapCard.value.map:", map); // ← ②
-
   if (!map) {
-    console.warn("[Route] 未获取到 map 实例，提前返回");
+    console.warn("[Route] 未获取到 map 实例，无法 fit");
     return;
   }
+  map.updateSize();
+  map.renderSync();
 
-  console.log("[Route] 调用 updateSize"); // ← ③
-  map.updateSize(); // 强制刷新容器尺寸
-
-  console.log("[Route] 调用 renderSync"); // ← ④
-  map.renderSync(); // 确保尺寸生效
-
-  // —— 计算并扩展 extent & 调试日志 ——
   let extent = source.getExtent();
-  console.log("[Route] 原始 extent:", extent); // ← ⑤
-
-  if (extent[0] === extent[2] && extent[1] === extent[3]) {
-    console.log("[Route] 单点 extent，执行 buffer"); // ← ⑥
-    extent = bufferExtent(extent, 10000); // 向外扩 10km
-    console.log("[Route] Buffer 后 extent:", extent); // ← ⑦
+  // 若 extent 无效或单点则扩展
+  if (!extent || extent.some((c) => !Number.isFinite(c))) {
+    console.warn("[Route] extent 无效，跳过 fit");
+    return;
   }
-
-  // —— fit 前日志 ——
+  if (extent[0] === extent[2] && extent[1] === extent[3]) {
+    // 单点 -> buffer
+    extent = bufferExtent(extent, 10000);
+  }
   const size = map.getSize();
-  console.log("[Route] map 容器 size:", size); // ← ⑧
-
-  if (
-    Array.isArray(extent) &&
-    extent.every((c) => Number.isFinite(c)) &&
-    Array.isArray(size)
-  ) {
-    console.log("[Route] 调用 view.fit"); // ← ⑨
+  if (Array.isArray(size)) {
     map.getView().fit(extent, {
       padding: [80, 80, 80, 80],
       size,
       duration: 400,
     });
-    console.log("[Route] fit 完成"); // ← ⑩
-  } else {
-    console.warn("[Route] extent 或 size 无效，跳过 fit");
   }
-
-  // —— 日志确认 ——
-  console.log("[Route] features:", source.getFeatures().length);
-  console.log("[Route] 最终 extent:", extent);
-  console.log("[Route] 最终 map size:", map.getSize());
 }
 
-async function fetchAndDisplayRoute(startIsrs, endIsrs) {
+
+
+// —— helper: 构建请求 body（使用用户给定模板） ——
+function buildEurisRequestBody(startIsrs, endIsrs, priority = "SHORTEST") {
+  // DepartAt 使用表单的 departureStart（ISO），若没有则使用当前时间 ISO
+  const departAtISO = form.value.departureStart
+    ? dayjs(form.value.departureStart).toISOString()
+    : dayjs().toISOString();
+
+  return {
+    StartISRS: startIsrs,
+    EndISRS: endIsrs,
+    // ViaPoints: [], // 如需插入中途 ISRS，可扩展
+    ShipCategory: 0,
+    ShipDimensions: {
+      Height: 4.5,
+      Width: 11,
+      Draught: 3,
+      Length: 111,
+      CEMT: "IV",
+    },
+    ShipSpeed: 0,
+    DepartAt: departAtISO,
+    CalculationOptions: {
+      ComputationType: priority, // 动态
+      UseSailingSpeeds: true,
+      UsePassageDuration: true,
+      UseReducedDimensions: true,
+      UseSmartReducedDimensions: true,
+      ReturnWaypointTypes: 0,
+    },
+    ResultFormatting: {
+      SplitGeometry: true,
+      HideViaPoints: true,
+      ResultLanguage: "EN",
+      TimezoneOffset: 0,
+      ReturnTranslatedNames: true,
+    },
+  };
+}
+
+// —— 防抖：避免短时间内频繁请求（简单实现） ——
+let _routeDebounceTimer = null;
+function debounceFetchRoute(startIsrs, endIsrs, priority) {
+  if (_routeDebounceTimer) clearTimeout(_routeDebounceTimer);
+  _routeDebounceTimer = setTimeout(() => {
+    fetchAndDisplayRoute(startIsrs, endIsrs, priority);
+  }, 400); // 400ms debounce，可按需调整
+}
+
+
+async function fetchAndDisplayRoute(startIsrs, endIsrs, priority = null) {
   if (!startIsrs || !endIsrs) return;
-  // 每次调用前先清空旧的路线
+  // 清空以前的路线
   routeLayer.getSource().clear();
+
+  // 若未传入 priority，则读取表单的（可能为 undefined）
+  const computationType = priority || form.value.priority || "SHORTEST";
+
+  const body = buildEurisRequestBody(startIsrs, endIsrs, computationType);
+
   try {
-    const res = await fetch(
-      "https://www.eurisportal.eu/api/RouteCalculatorV2/CalculateRoute",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          StartISRS: startIsrs,
-          EndISRS: endIsrs,
-          // …这里填你之前在默认请求里用的其余固定参数…
-        }),
-      }
-    );
+    // 注意：你之前的示例中 endpoint 有两个版本，这里按你要求使用 /Calculate
+    const url = "https://www.eurisportal.eu/api/RouteCalculatorV2/Calculate";
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("[Route] HTTP error:", res.status, text);
+      ElMessage.error(`路由计算接口返回错误：${res.status}`);
+      return;
+    }
+
     const data = await res.json();
-    const paths = data?.Itineraries?.[0]?.Geometry?.paths || [];
+    // 成功标志由 API 返回字段决定（示例中有 Success:true）
+    if (!data || data.Success === false) {
+      console.error("[Route] API returned failure:", data);
+      ElMessage.error("路由计算返回失败（请检查请求参数或优先级设置）");
+      return;
+    }
+
+    // 解析路径：优先选择 Itineraries[0].Geometry.paths（示例里存在）
+    let paths = [];
+    if (Array.isArray(data.Itineraries) && data.Itineraries.length > 0) {
+      const itin = data.Itineraries[0];
+      const g = itin.Geometry;
+      if (g && Array.isArray(g.paths) && g.paths.length > 0) {
+        paths = g.paths.slice(); // 复制
+      } else {
+        // fallback: 合并 legs -> segments 的 CompressedGeometry（可能更细粒度）
+        const legs = itin.Legs || [];
+        for (const leg of legs) {
+          if (Array.isArray(leg.Segments)) {
+            for (const seg of leg.Segments) {
+              if (seg.CompressedGeometry) paths.push(seg.CompressedGeometry);
+            }
+          }
+        }
+      }
+    } else {
+      // 更下层 fallback：尝试直接从 data.Itineraries（若结构不同）
+      console.warn("[Route] Itineraries empty, raw data:", data);
+    }
+
+    // 过滤空串并去重（有些结果含 "" 分隔）
+    paths = (paths || []).filter((p) => p && p.trim() !== "");
+
+    if (!paths.length) {
+      console.warn("[Route] 没有可用的路径字符串，raw response:", data);
+      ElMessage.warning("No stackable paths returned");
+      return;
+    }
+
+    // 调用已有的路径绘制函数（你原来的 addEurisPaths），但确保它在 scope 中可用
     addEurisPaths(paths);
+
+
+
   } catch (err) {
-    ElMessage.error("路由计算失败");
-    console.error(err);
+    console.error("[Route] exception", err);
+    ElMessage.error("Route calculation failure (network or interface anomaly)");
   }
 }
+
 // 添加 watch，监听 originPortId 和 destinationPortId
 watch(
-  () => [form.value.originPortId, form.value.destinationPortId],
-  ([start, end]) => {
-    // if (!open.value) return
+  () => [form.value.originPortId, form.value.destinationPortId, form.value.priority],
+  ([start, end, priority]) => {
     if (start && end) {
-      fetchAndDisplayRoute(start, end);
+      // 使用防抖版本
+      debounceFetchRoute(start, end, priority);
+    } else {
+      // 若任一为空则清除图层
+      routeLayer.getSource().clear();
     }
   }
 );
 
 // 新增：点击记录时隐藏表单并绘制线路
 function onRecordClick(record) {
-  // 1) 隐藏悬浮表单
   showForm.value = false;
-
-  fetchAndDisplayRoute(
-    // 2) 调用已有函数，传入 originPortId 和 destinationPortId
-    record.originPortId,
-    record.destinationPortId
-  );
+  // 改用防抖 + 带当前 priority 的调用（避免旧请求覆盖新请求）
+  debounceFetchRoute(record.originPortId, record.destinationPortId, form.value.priority);
 }
 
 // 定义一个方法，用来拉最新的物流列表
@@ -788,8 +848,8 @@ function submitForm() {
               <el-col :span="12">
                 <el-form-item label="Priority">
                   <el-select v-model="form.priority" placeholder="Select">
-                    <el-option label="Distance" value="Distance" />
-                    <el-option label="Time" value="Time" />
+                    <el-option label="Shortest" value="SHORTEST" />
+                    <el-option label="Fastest " value="FASTEST " />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -1147,8 +1207,8 @@ function submitForm() {
           <el-col :span="12">
             <el-form-item label="Priority">
               <el-select v-model="form.priority" placeholder="Select">
-                <el-option label="Distance" value="Distance" />
-                <el-option label="Time" value="Time" />
+                <el-option label="Shortest" value="SHORTEST" />
+                <el-option label="Fastest" value="FASTEST" />
               </el-select>
             </el-form-item>
           </el-col>
