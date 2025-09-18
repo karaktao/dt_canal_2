@@ -149,6 +149,11 @@ function doSomething() {
 }
 const activeLayerType = ref(null); // 当前激活图层的类型
 
+
+
+
+
+
 // --------- 地图初始化 ---------
 onMounted(() => {
   // 创建视图
@@ -207,6 +212,169 @@ function onMapReady(map) {
   // console.log("🗺️ 地图已准备好：", map);
   // 公共交互可放这里
 }
+
+
+
+// --------- 路径规划地图叠加 ---------
+// 顶部 imports（和其它 ol imports 放一起）
+import VectorLayer from "ol/layer/Vector";
+import VectorSource from "ol/source/Vector";
+import LineString from "ol/geom/LineString";
+import Feature from "ol/Feature";
+import { buffer as bufferExtent } from "ol/extent";
+import { fromLonLat } from "ol/proj";
+import { Style, Stroke } from "ol/style";
+
+// —— 样式（想要改样式就在这里修改） ——
+// 主体线（可改 color/width）
+const routeStyle = new Style({
+  stroke: new Stroke({
+    color: "rgba(0, 123, 255, 0.9)",
+    width: 6,
+    lineCap: "round",
+  }),
+});
+// 中心虚线（可改 dash pattern / color）
+const dashedCenterLineStyle = new Style({
+  stroke: new Stroke({
+    color: "rgba(255,255,255,0.95)",
+    width: 1,
+    lineDash: [30, 10, 5, 10],
+    lineCap: "round",
+  }),
+});
+
+// —— routeLayer（全局持有） ——
+// 放在 script 的上层，使其它函数可访问
+const routeLayer = new VectorLayer({
+  source: new VectorSource(),
+  zIndex: 2000, // 确保在线上层
+  style: function (feature) {
+    // 你可以根据 feature.get('computation') 返回不同样式
+    return [routeStyle, dashedCenterLineStyle];
+  },
+});
+
+// 把 routeLayer 加到 map（map 初始化后）
+onMounted(() => {
+  // ... 你已有的 map 创建代码
+  // 在 map.value 初始化之后把 routeLayer 加进去
+  if (map.value && !map.value.getLayers().getArray().includes(routeLayer)) {
+    map.value.addLayer(routeLayer);
+  }
+});
+
+// —— Polyline 解码函数（复用 postcargo 的实现） ——
+// 返回 [ [lat, lon], [lat, lon], ... ]
+function decodePolyline(str) {
+  if (!str) return [];
+  let index = 0,
+    lat = 0,
+    lng = 0,
+    coordinates = [];
+
+  while (index < str.length) {
+    let b,
+      shift = 0,
+      result = 0;
+
+    do {
+      b = str.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlat = result & 1 ? ~(result >> 1) : result >> 1;
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = str.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlng = result & 1 ? ~(result >> 1) : result >> 1;
+    lng += dlng;
+
+    coordinates.push([lat / 1e6, lng / 1e6]); // [lat, lon]
+  }
+  return coordinates;
+}
+
+// —— 把 Euris 返回的 paths 添加到 routeLayer 上 ——
+// paths: array of encoded strings
+function addEurisPaths(paths, opts = {}) {
+  const src = routeLayer.getSource();
+  src.clear();
+
+  for (const encoded of paths) {
+    if (!encoded || !encoded.trim()) continue;
+    try {
+      const decoded = decodePolyline(encoded); // [ [lat,lon], ... ]
+      // 转为 ol 所需的坐标（EPSG:3857）
+      const coords = decoded.map(([lat, lon]) => fromLonLat([lon, lat]));
+      const feat = new Feature({
+        geometry: new LineString(coords),
+      });
+      // 可根据 opts.computation 给 feature 打标签（比如 FASTEST/SHORTEST）
+      if (opts?.computation) feat.set("computation", opts.computation);
+      src.addFeature(feat);
+    } catch (e) {
+      console.warn("[Route] polyline 解码失败，跳过：", encoded, e);
+    }
+  }
+
+  // fit 到路线范围
+  const mapIns = map.value;
+  if (!mapIns) return;
+  mapIns.updateSize(); mapIns.renderSync();
+  let extent = src.getExtent();
+  if (!extent || extent.some((c) => !Number.isFinite(c))) return;
+  if (extent[0] === extent[2] && extent[1] === extent[3]) {
+    // 单点：buffer 一下
+    extent = bufferExtent(extent, 10000);
+  }
+  const size = mapIns.getSize();
+  if (Array.isArray(size)) {
+    mapIns.getView().fit(extent, { padding: [280, 280, 580, 180], size, duration: 400 });
+  }
+}
+
+// 清除路线
+function clearRouteLayer() {
+  routeLayer.getSource().clear();
+}
+
+// 父接收 LogisticInfo 或 RouteInfo 发过来的 request-route
+function onRequestRouteFromPanel(payload) {
+  // payload 可能来自 RouteInfo: { computation: 'SHORTEST'|'FASTEST', paths: [...] } 或 { clear: true }
+  if (!payload) return;
+  if (payload.clear) {
+    clearRouteLayer();
+    return;
+  }
+  const paths = payload.paths || payload.path || [];
+  if (!paths || !paths.length) {
+    clearRouteLayer();
+    return;
+  }
+  addEurisPaths(paths, { computation: payload.computation });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function registerLayer(layer) {
   if (!layer) {
@@ -597,6 +765,54 @@ onMounted(() => {
     }
   });
 });
+
+// LogisticInfo 修改信息同步
+
+const infoListRef = ref(null);
+const infoPanelCRef = ref(null);
+
+// index.vue - replace onLogisticSavedFromPanel with this
+function onLogisticSavedFromPanel(savedRecord) {
+  console.log("[index] onLogisticSavedFromPanel payload:", savedRecord);
+
+  if (!selectedItem?.value) {
+    console.warn("[index] no selectedItem set, nothing to update");
+    return;
+  }
+
+  // 兼容后端包裹 res.data 的情况
+  const payload = savedRecord?.data ?? savedRecord ?? {};
+  console.log("[index] payload normalized:", payload);
+
+  console.log(
+    "[index] selectedItem BEFORE:",
+    JSON.parse(JSON.stringify(selectedItem.value))
+  );
+
+  // 强制替换成全新对象（确保 Vue 发现引用变更）
+  selectedItem.value = JSON.parse(
+    JSON.stringify({ ...selectedItem.value, ...payload })
+  );
+
+  console.log("[index] selectedItem AFTER:", selectedItem.value);
+
+  // 尝试通知侧栏（若存在）
+  try {
+    if (
+      typeof infoPanelCRef !== "undefined" &&
+      infoPanelCRef?.value?.onLogisticSaved
+    ) {
+      infoPanelCRef.value.onLogisticSaved(payload);
+      return;
+    }
+    if (typeof infoListRef !== "undefined" && infoListRef?.value) {
+      infoListRef.value.applySaved?.(payload) ??
+        infoListRef.value.reloadRecords?.();
+    }
+  } catch (e) {
+    console.warn("safe refresh failed or infoRef not present", e);
+  }
+}
 </script>
 
 
@@ -746,7 +962,11 @@ onMounted(() => {
 
       <!-- 右侧两块 -->
       <div class="overlay right">
-        <component :is="InfoC" @feature-clicked="handleFeatureClick" />
+        <component
+          :is="InfoC"
+          ref="infoPanelCRef"
+          @feature-clicked="handleFeatureClick"
+        />
         <component :is="InfoD" />
       </div>
 
@@ -813,7 +1033,15 @@ onMounted(() => {
           />
           <LogisticInfo
             v-if="selectedItem && activeLayerType === 'logistic'"
-            :record="selectedItem"
+            v-model:record="selectedItem"
+            :key="
+              selectedItem?.id ||
+              selectedItem?._id ||
+              selectedItem?.published_at ||
+              ''
+            "
+            @saved="onLogisticSavedFromPanel"
+            @request-route="onRequestRouteFromPanel"
           />
         </template>
 

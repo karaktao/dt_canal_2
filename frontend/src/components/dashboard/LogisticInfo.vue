@@ -234,6 +234,11 @@
       </div>
     </transition>
   </el-card>
+
+<RouteInfo :record="record" @show-route-paths="onRoutePaths" />
+
+<RouteMatch :record="record" @feature-clicked="onRouteMatchClick" />
+
 </template>
 
 <script setup>
@@ -243,6 +248,9 @@ import { ElMessage } from "element-plus";
 
 import { listBerth } from "@/api/infrastructure/berth";
 import { updatePublish } from "@/api/transport/publish";
+
+import RouteInfo from "@/components/dashboard/RouteInfo.vue";
+import RouteMatch from "@/components/dashboard/RouteMatch.vue";
 
 const props = defineProps({
   record: { type: Object, default: () => ({}) },
@@ -255,6 +263,59 @@ const saving = ref(false);
 const editFormRef = ref(null);
 const editForm = reactive({});
 
+// -------------- 物流信息修改实时更新 --------------
+watch(
+  () => record.value,
+  (newVal, oldVal) => {
+    console.log(
+      "[LogisticInfo] record prop changed. old:",
+      oldVal,
+      "new:",
+      newVal
+    );
+  },
+  { deep: true, immediate: true }
+);
+
+const formatSubtitle = computed(() => {
+  const r = record.value || {};
+  const from = r.originPort || r.originCity || "";
+  const to = r.destinationPort || r.destinationCity || "";
+  return [from, to].filter(Boolean).join(" → ");
+});
+
+// -------------- 物流规划信息 --------------
+
+const emit = defineEmits(["saved", "request-route", "update:record",'feature-clicked']);
+
+
+
+// 监听 record，当 panel 打开或 record 改变时请求绘制路线
+watch(
+  () => props.record,
+  (r) => {
+    if (!r) return;
+    const start = r.originPortId || r.originPortIdString || r.originPort; // 根据实际字段选
+    const end =
+      r.destinationPortId || r.destinationPortIdString || r.destinationPort;
+    const priority = r.priority || r.prioritySetting || undefined;
+    if (start && end) {
+      // 向父组件请求绘制路线（父组件负责调用 fetch/debounce 函数）
+      emit("request-route", { start, end, priority });
+    } else {
+      // 如果没有 start/end，可以请求父组件清除路线
+      emit("request-route", { clear: true });
+    }
+  },
+  { immediate: true }
+);
+
+// 地图转发函数
+function onRoutePaths(payload) {
+  // 统一转发给父：父用同一个入口处理（画线/清线）
+  emit('request-route', payload);
+}
+
 // -------------- assignmentType-based field definitions --------------
 // 你可以按需在这里调整每种类型要显示的字段顺序与内容
 const FIELDS_CARGO_TO_VESSEL = [
@@ -262,6 +323,8 @@ const FIELDS_CARGO_TO_VESSEL = [
   "assignmentType",
   "originPort",
   "destinationPort",
+  "originPortId",
+  "destinationPortId",
   "originCity",
   "destinationCity",
   "departureStart",
@@ -308,18 +371,18 @@ const FIELDS_ALL_FALLBACK = Array.from(
 
 // 显示在摘要（summary）中的字段：按类型区分、可自定义顺序
 const SUMMARY_CARGO = [
-  "originPort",
-  "destinationPort",
+  // "originPort",
+  // "destinationPort",
   "Departure",
   "ETA",
   "tonnageDemand",
   "cargoType",
-  "Priority",
-  "status",
+  // "Priority",
+  // "status",
 ];
 const SUMMARY_VESSEL = [
-  "originPort",
-  "destinationPort",
+  // "originPort",
+  // "destinationPort",
   "vesselName",
   "tonnageAvailable",
   "Departure",
@@ -362,6 +425,10 @@ const labelMap = {
 // 根据 record.assignmentType 选择不同的字段集并构造 {label, html}
 const allFields = computed(() => {
   const r = record.value || {};
+  console.log(
+    "[LogisticInfo] recomputing allFields for record id:",
+    r?.id ?? r?._id ?? "(no id)"
+  );
   const assignment = (r.assignmentType || "").toLowerCase();
   let fieldKeys = FIELDS_ALL_FALLBACK;
   if (assignment === "cargo_to_vessel") fieldKeys = FIELDS_CARGO_TO_VESSEL;
@@ -432,6 +499,10 @@ function computeFieldHtml(label, r) {
       return formatTime(r.vesselAvailabilityEnd);
     case "originPort":
       return fmt(r.originPort);
+    case "destinationPortId":
+      return fmt(r.destinationPortId);
+    case "originPortId":
+      return fmt(r.originPortId);
     case "destinationPort":
       return fmt(r.destinationPort);
     case "originCity":
@@ -580,8 +651,6 @@ const editRules = {
   ],
 };
 
-const emit = defineEmits(["saved"]);
-
 async function onSave() {
   try {
     await editFormRef.value.validate();
@@ -592,10 +661,22 @@ async function onSave() {
   try {
     const payload = { ...editForm, id: editForm.id };
     const res = await updatePublish(payload);
-    const savedRecord = res?.data ?? res ?? payload;
+
+    // ✅ 使用“原记录 + 表单”得到最新业务对象（不要用 {msg,code}）
+    const curr = record.value || {};
+    const updated = { ...curr, ...editForm };
+
+    // 如果你的后端真的会回传完整记录（含 id 等），再用它覆盖一遍：
+    const apiData =
+      res?.data && (res.data.id || res.data._id) ? res.data : null;
+    if (apiData) Object.assign(updated, apiData);
+
     ElMessage.success("Save Successful");
     editMode.value = false;
-    emit("saved", savedRecord);
+
+    // ✅ 对外通知 & 同步 v-model
+    emit("saved", updated);
+    emit("update:record", updated);
   } catch (err) {
     console.error("Save failed", err);
     ElMessage.error("Save failed");
@@ -755,7 +836,7 @@ function optionsForField(label) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .header .left {
   display: flex;
@@ -768,6 +849,7 @@ function optionsForField(label) {
 }
 .header .sub {
   color: #6b7280;
+  margin-top: 8px;
   font-size: 13px;
 }
 

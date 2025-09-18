@@ -22,10 +22,12 @@
     <!-- 这里用 v-if 控制显示；你也可以改为用 <el-dialog> 包裹 LogisticInfo -->
     <LogisticInfo
       v-if="showLogisticEditor"
+      v-model:record="editingRecord"
       :record="editingRecord"
       @saved="onLogisticSaved"
       @close="closeLogisticEditor"
     />
+
   </el-card>
 </template>
 
@@ -35,6 +37,8 @@ import InfoVessel from "./InfoVessel.vue";
 import InfoLogistic from "./InfoLogistic.vue";
 import InfoNotice from "./InfoNotice.vue";
 import LogisticInfo from "./LogisticInfo.vue";
+import RouteInfo from "@/components/dashboard/RouteInfo.vue";  
+import RouteMatch from "@/components/dashboard/RouteMatch.vue";
 
 
 // ref 指向 InfoLogistic 以便调用其 reloadRecords/applySaved
@@ -66,6 +70,11 @@ function onLogisticSaved(savedRecord) {
 function closeLogisticEditor() {
   showLogisticEditor.value = false;
 }
+
+// 在 infoc.vue 的 script setup 中加入（放在现有函数定义后）
+defineExpose({
+  onLogisticSaved,   // 允许父组件调用 infoc.vue 的 onLogisticSaved(savedRecord)
+});
 </script>
 
 <style >
