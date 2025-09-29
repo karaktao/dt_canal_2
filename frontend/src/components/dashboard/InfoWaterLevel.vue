@@ -1,4 +1,3 @@
-
 <script setup>
 import { ref, onMounted, computed, watch, onBeforeUnmount } from "vue";
 import axios from "axios";
@@ -31,7 +30,7 @@ const KAUB_STATION_ID = "1d26e504-7f9e-480a-b52c-5932be6549ab";
 const KAUB_LEVEL_URL = `https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/${KAUB_STATION_ID}/W/currentmeasurement.json`;
 const KAUB_DISCHARGE_URL = `https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/${KAUB_STATION_ID}/Q/currentmeasurement.json`;
 
-/* Lobith -48,48 特别请求（你要的 URL） */
+/* Lobith -48,48 特别请求 */
 const LOBITH_48_VALUES = "-48,48";
 const LOBITH_48_URL = `${API_PATH}?mapType=${MAP_LEVEL}&locationCodes=${locationMap.LOBI}&values=${LOBITH_48_VALUES}`;
 
@@ -65,23 +64,17 @@ let lobithChartInstance = null;
 
 // 从已有显示函数复用并统一输出（字符串，不带单位）
 function getLevelDisplay(code) {
-  if (code === "KAUB") return displayKaubLevel(); // 你的 displayKaubLevel 已存在
-  // 其他站点用 displayLevel（返回字符串或 '—'）
+  if (code === "KAUB") return displayKaubLevel();
   return displayLevel(code);
 }
-
 function getDischargeDisplay(code) {
-  if (code === "KAUB") return displayKaubDischarge(); // 已存在
+  if (code === "KAUB") return displayKaubDischarge();
   return displayDischargeForRow(code);
 }
-
 function getTimeDisplay(code) {
-  if (code === "KAUB") return kaubLevelTimeDisplay(); // 或 kaubDischargeTimeDisplay() 根据需要
-  // 其他站点尝试使用 levelTimeDisplay 或 dischargeTimeDisplayForRow
-  // 优先显示水位时间
+  if (code === "KAUB") return kaubLevelTimeDisplay();
   const t = levelTimeDisplay(code);
   if (t && t !== "no data") return t;
-  // fallback to discharge
   const td = dischargeTimeDisplayForRow(code);
   return td || "no data";
 }
@@ -191,13 +184,11 @@ async function fetchLobith48Raw() {
       lobithChart48Obj.value = null;
       return;
     }
-    // 保存字符串（便于调试）
     try {
       lobithChart48.value = JSON.stringify(resp.data, null, 2);
     } catch (e) {
       lobithChart48.value = String(resp.data);
     }
-    // 保存解析后的对象以便表格使用
     try {
       lobithChart48Obj.value = resp.data;
     } catch (e) {
@@ -210,8 +201,7 @@ async function fetchLobith48Raw() {
   }
 }
 
-/* ----- 用于表格的数据转换（Lobith） ----- */
-/* lobithChart48Obj 结构按照你给出的样例：{ t0, series: [{ isPrediction, data: [...] , color }] } */
+/* ----- 用于表格的数据转换（Lobith 原始平铺）----- */
 const lobithRows = computed(() => {
   const obj = lobithChart48Obj.value;
   if (!obj || !Array.isArray(obj.series)) return [];
@@ -232,70 +222,73 @@ const lobithRows = computed(() => {
       });
     }
   }
-  // sort by date ascending
   rows.sort((a, b) =>
     a.dateTime > b.dateTime ? 1 : a.dateTime < b.dateTime ? -1 : 0
   );
   return rows;
 });
 
-function buildLobithOption(rows) {
-  // 横坐标只显示 日-月（DD-MM）
-  const labels = rows.map((r) => {
-    try {
-      const d = new Date(r.dateTime);
-      const day = String(d.getDate()).padStart(2, "0");
-      const month = String(d.getMonth() + 1).padStart(2, "0");
-      return `${day}-${month}`;
-    } catch (e) {
-      return r.dateTime;
-    }
-  });
+/* ----- 关键：透视为统一时间轴（解决重叠段空白） ----- */
+const lobithSeries = computed(() => {
+  const obj = lobithChart48Obj.value;
+  if (!obj || !Array.isArray(obj.series)) {
+    return { times: [], labels: [], measured: [], prediction: [] };
+  }
 
-  const measuredData = rows.map((r) =>
-    r.isPrediction ? null : Number.isFinite(r.value) ? r.value : null
-  );
-  const predictionData = rows.map((r) =>
-    r.isPrediction ? (Number.isFinite(r.value) ? r.value : null) : null
-  );
-
-  // 收集所有有效数值（包括 measured 与 prediction）
-  const allNums = rows
-    .map((r) => (Number.isFinite(r.value) ? Number(r.value) : NaN))
-    .filter((v) => Number.isFinite(v));
-
-  // 计算 y 轴的 max/min 按规则（10 的倍数）：
-  // yMax = 大于 maxVal 的最小 10 的倍数
-  // yMin = 小于 minVal 的最大 10 的倍数
-  let yMax, yMin;
-  if (allNums.length === 0) {
-    // 没有数据时的回退值（按 10 的规则）
-    yMax = 10;
-    yMin = -10;
-  } else {
-    const maxVal = Math.max(...allNums);
-    const minVal = Math.min(...allNums);
-
-    // 严格大于 maxVal 的最小 10 的倍数
-    yMax = Math.floor(maxVal / 10) * 10 + 10;
-
-    // 严格小于 minVal 的最大 10 的倍数
-    yMin = Math.ceil(minVal / 10) * 10 - 10;
-
-    // 额外容错：如果计算结果相等或 yMin >= yMax，则扩展范围
-    if (yMin >= yMax) {
-      // 以中心值为基准，确保至少有间距 2 * 10（即 20）
-      const center = (maxVal + minVal) / 2 || 0;
-      yMax = Math.ceil((center + 10) / 10) * 10;
-      yMin = Math.floor((center - 10) / 10) * 10;
-      if (yMin === yMax) {
-        yMax = yMin + 10;
-      }
+  // 聚合到同一时间戳
+  const map = new Map(); // ts -> { measured, prediction }
+  for (const s of obj.series) {
+    const isPrediction = !!s.isPrediction;
+    if (!Array.isArray(s.data)) continue;
+    for (const d of s.data) {
+      const ts = d?.dateTime;
+      if (!ts) continue;
+      const v = Number.isFinite(+d.value) ? +d.value : null;
+      if (!map.has(ts)) map.set(ts, { measured: null, prediction: null });
+      const rec = map.get(ts);
+      if (isPrediction) rec.prediction = v;
+      else rec.measured = v;
     }
   }
 
-  // 辅助：把 ISO 转成 YYYY-MM-DD HH:mm
-  function fmtFullLocal(iso) {
+  const times = Array.from(map.keys()).sort();
+  const labels = times.map((iso) => {
+    try {
+      const d = new Date(iso);
+      const day = String(d.getDate()).padStart(2, "0");
+      const mon = String(d.getMonth() + 1).padStart(2, "0");
+      return `${day}-${mon}`;
+    } catch {
+      return iso;
+    }
+  });
+  const measured = times.map((t) => map.get(t).measured);
+  const prediction = times.map((t) => map.get(t).prediction);
+
+  return { times, labels, measured, prediction };
+});
+
+/* ----- 构建 ECharts 配置（基于统一时间轴） ----- */
+function buildLobithOptionFromSeries(seriesPack) {
+  const { times, labels, measured, prediction } = seriesPack;
+
+  const allVals = [...measured, ...prediction].filter((v) => Number.isFinite(v));
+  let yMax = 10,
+    yMin = -10;
+  if (allVals.length) {
+    const maxVal = Math.max(...allVals);
+    const minVal = Math.min(...allVals);
+    yMax = Math.floor(maxVal / 10) * 10 + 10; // 严格高于 max
+    yMin = Math.ceil(minVal / 10) * 10 - 10;  // 严格低于 min
+    if (yMin >= yMax) {
+      const center = (maxVal + minVal) / 2 || 0;
+      yMax = Math.ceil((center + 10) / 10) * 10;
+      yMin = Math.floor((center - 10) / 10) * 10;
+      if (yMin === yMax) yMax = yMin + 10;
+    }
+  }
+
+  const fmt = (iso) => {
     try {
       const d = new Date(iso);
       const Y = d.getFullYear();
@@ -303,80 +296,34 @@ function buildLobithOption(rows) {
       const D = String(d.getDate()).padStart(2, "0");
       const hh = String(d.getHours()).padStart(2, "0");
       const mm = String(d.getMinutes()).padStart(2, "0");
-      return `${D}-${M}-${Y} ${hh}:${mm}`; // 如果你想要 YYYY-MM-DD 把顺序改为 `${Y}-${M}-${D} ${hh}:${mm}`
-    } catch (e) {
+      return `${D}-${M}-${Y} ${hh}:${mm}`;
+    } catch {
       return iso;
     }
-  }
+  };
 
   return {
     tooltip: {
       trigger: "axis",
-      triggerOn: "mousemove",
-      renderMode: "html",
-      enterable: true,
-      confine: false, // 若想把 tooltip 限制在图表内可设为 true
-
-      // extraCssText:
-      //   "background: rgba(50,50,50,0.92); color:#fff; border-radius:6px; padding:8px 10px; max-width:320px; box-shadow:0 6px 18px rgba(0,0,0,0.25);",
-      position: function (pos, params, el, elRect, size) {
-        const gap = 8;
-        const mouseX = pos[0],
-          mouseY = pos[1];
-        const tipW = size && size.contentSize ? size.contentSize[0] : size[0];
-        const tipH = size && size.contentSize ? size.contentSize[1] : size[1];
-
-        // 首选放上方
-        let x = mouseX;
-        let y = mouseY - tipH - gap;
-
-        // 超出上方则放下方
-        if (y < 0) y = mouseY + gap;
-
-        // 右侧边界检测
-        const containerW = elRect
-          ? elRect.width
-          : document.documentElement.clientWidth || 1000;
-        if (x + tipW > containerW) x = containerW - tipW - 6;
-        if (x < 6) x = 6;
-
-        // 返回相对于图表容器左上角的坐标
-        return [x, y];
-      },
-
       axisPointer: { type: "shadow" },
-      textStyle: {
-        fontSize: 10, // <- 改这个数值调整字体大小
-      },
-
-      formatter: function (params) {
-        if (!params || !params.length) return "";
+      textStyle: { fontSize: 10 },
+      formatter: (params) => {
+        if (!params?.length) return "";
         const idx = params[0].dataIndex;
-        const fullTime =
-          rows && rows[idx] && rows[idx].dateTime
-            ? fmtFullLocal(rows[idx].dateTime)
-            : "";
-        const seriesLines = params
-          .map((p) => {
-            const val =
-              p.value === null || p.value === undefined ? "—" : p.value;
-            return `${p.marker} ${p.seriesName}：${val}`;
-          })
+        const fullTime = times[idx] ? fmt(times[idx]) : "";
+        const lines = params
+          .map((p) => `${p.marker} ${p.seriesName}：${p.value ?? "—"}`)
           .join("<br/>");
-        return `${fullTime}<br/>${seriesLines}`;
+        return `${fullTime}<br/>${lines}`;
       },
     },
-    legend: { data: ["Measured", "Prediction"], top: 0 }, // 上移一点，不占用太多空间
-    grid: { top: 32, left: 35, right: 5, bottom: 60, height: 70 }, // top 减小，腾出高度给图
+    legend: { data: ["Measured", "Prediction"], top: 0 },
+    grid: { top: 32, left: 35, right: 5, bottom: 60, height: 70 },
     xAxis: {
       type: "category",
       data: labels,
       boundaryGap: false,
-      axisLabel: {
-        rotate: 0,
-        fontSize: 10,
-        interval: Math.ceil(labels.length / 8),
-      },
+      axisLabel: { rotate: 0, fontSize: 10, interval: Math.ceil(labels.length / 8) },
     },
     yAxis: {
       type: "value",
@@ -389,52 +336,92 @@ function buildLobithOption(rows) {
       {
         name: "Measured",
         type: "line",
-        data: measuredData,
+        data: measured,
         showSymbol: false,
+        connectNulls: true,               // 关键：跨 null 连线
         lineStyle: { width: 2 },
         itemStyle: { color: "#409eff" },
       },
       {
         name: "Prediction",
         type: "line",
-        data: predictionData,
+        data: prediction,
         showSymbol: false,
-        lineStyle: { width: 2 },
+        connectNulls: true,               // 关键：跨 null 连线
+        lineStyle: { width: 2, type: "dashed" }, // 预测虚线
         itemStyle: { color: "#91CC75" },
       },
     ],
   };
 }
 
+/* ----- 初始化/更新图表 ----- */
 function initLobithChart() {
   if (!lobithChartEl.value) return;
   lobithChartInstance = echarts.init(lobithChartEl.value);
 }
-
 function updateLobithChart() {
   if (!lobithChartInstance) initLobithChart();
   if (!lobithChartInstance) return;
-  const rows = lobithRows.value || [];
-  const option = buildLobithOption(rows);
+  const pack = lobithSeries.value || { labels: [] };
+  const option = buildLobithOptionFromSeries(pack);
   lobithChartInstance.setOption(option, { notMerge: false });
 }
 
-/* 辅助：把 ISO 时间转成本地可读短串 */
-function fmtLocalShort(iso) {
-  try {
-    const d = new Date(iso);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    return `${y}-${m}-${day} ${hh}:${mm}`;
-  } catch (e) {
-    return iso;
-  }
+/* ----- 工具显示函数（原有） ----- */
+function exactLocationStr(key) {
+  return locationMap[key] || key;
+}
+function displayName(key) {
+  return names[key] || exactLocationStr(key);
+}
+function displayLevel(code) {
+  const v = levelValues.value[code];
+  if (v === null || v === undefined) return "—";
+  const n = Number.parseFloat(v);
+  return Number.isFinite(n) ? `${Math.round(n)} ` : "—";
+}
+function displayDischargeForRow(code) {
+  const src = cardToDischargeSource[code];
+  if (!src) return "—";
+  const v = dischargeValues.value[src];
+  if (v === null || v === undefined) return "—";
+  const n = Number.parseFloat(v);
+  return Number.isFinite(n) ? `${n.toFixed(2)} ` : "—";
+}
+function dischargeTimeDisplayForRow(code) {
+  const src = cardToDischargeSource[code];
+  if (!src) return "no data";
+  const dt = dischargeTimes.value[src];
+  return dt ? dt.slice(0, 16).replace("T", " ") : "no data";
 }
 
-/* ----- 主流程：并行请求所有需要的数据 ----- */
+/* Kaub 显示 */
+function displayKaubLevel() {
+  const v = kaubLevel.value.value;
+  if (v === null || v === undefined) return "—";
+  const n = Number.parseFloat(v);
+  return Number.isFinite(n) ? `${Math.round(n)} ` : "—";
+}
+function kaubLevelTimeDisplay() {
+  const t = kaubLevel.value.timestamp;
+  return t ? t.slice(0, 16).replace("T", " ") : "no data";
+}
+function kaubLevelStatusDisplay() {
+  return kaubLevel.value.status || "—";
+}
+function displayKaubDischarge() {
+  const v = kaubDischarge.value.value;
+  if (v === null || v === undefined) return "—";
+  const n = Number.parseFloat(v);
+  return Number.isFinite(n) ? `${n.toFixed(2)} ` : "—";
+}
+function kaubDischargeTimeDisplay() {
+  const t = kaubDischarge.value.timestamp;
+  return t ? t.slice(0, 16).replace("T", " ") : "no data";
+}
+
+/* ----- 拉取所有数据 ----- */
 async function fetchAll() {
   loading.value = true;
   try {
@@ -448,7 +435,7 @@ async function fetchAll() {
       fetchChartByKey(src, MAP_DISCHARGE)
     );
 
-    // 同时并行发起 Lobith -48,48 的原始请求（不会影响主解析）
+    // 同时并行发起 Lobith -48,48 的原始请求
     const lobith48Promise = fetchLobith48Raw();
 
     const [levelResults, dischargeResults] = await Promise.all([
@@ -496,7 +483,7 @@ async function fetchAll() {
 
     // 解析流量
     dischargeResults.forEach((res, idx) => {
-      const src = dischargeSources[idx];
+      const src = ["WEST", "LOBI"][idx];
       if (!res) {
         dischargeValues.value[src] = null;
         dischargeTimes.value[src] = null;
@@ -513,98 +500,33 @@ async function fetchAll() {
     });
 
     // 请求 Kaub 的 pegelonline 数据（并行）
-    await Promise.all([
-      fetchKaubLevel(),
-      fetchKaubDischarge(),
-      lobith48Promise,
-    ]);
+    await Promise.all([fetchKaubLevel(), fetchKaubDischarge(), lobith48Promise]);
   } finally {
     loading.value = false;
   }
 }
 
-/* ----- 显示格式化 ----- */
-function exactLocationStr(key) {
-  return locationMap[key] || key;
-}
-function displayName(key) {
-  return names[key] || exactLocationStr(key);
-}
-
-function displayLevel(code) {
-  const v = levelValues.value[code];
-  if (v === null || v === undefined) return "—";
-  const n = Number.parseFloat(v);
-  return Number.isFinite(n) ? `${Math.round(n)} ` : "—"; // 改为整数（四舍五入）
-}
-
-function displayDischargeForRow(code) {
-  const src = cardToDischargeSource[code];
-  if (!src) return "—";
-  const v = dischargeValues.value[src];
-  if (v === null || v === undefined) return "—";
-  const n = Number.parseFloat(v);
-  return Number.isFinite(n) ? `${n.toFixed(2)} ` : "—";
-}
-function dischargeTimeDisplayForRow(code) {
-  const src = cardToDischargeSource[code];
-  if (!src) return "no data";
-  const dt = dischargeTimes.value[src];
-  return dt ? dt.slice(0, 16).replace("T", " ") : "no data";
-}
-
-/* Kaub 显示 */
-function displayKaubLevel() {
-  const v = kaubLevel.value.value;
-  if (v === null || v === undefined) return "—";
-  const n = Number.parseFloat(v);
-  return Number.isFinite(n) ? `${Math.round(n)} ` : "—"; // 改为整数（四舍五入）
-}
-function kaubLevelTimeDisplay() {
-  const t = kaubLevel.value.timestamp;
-  return t ? t.slice(0, 16).replace("T", " ") : "no data";
-}
-function kaubLevelStatusDisplay() {
-  return kaubLevel.value.status || "—";
-}
-function displayKaubDischarge() {
-  const v = kaubDischarge.value.value;
-  if (v === null || v === undefined) return "—";
-  const n = Number.parseFloat(v);
-  return Number.isFinite(n) ? `${n.toFixed(2)} ` : "—";
-}
-function kaubDischargeTimeDisplay() {
-  const t = kaubDischarge.value.timestamp;
-  return t ? t.slice(0, 16).replace("T", " ") : "no data";
-}
-
-/* ----- 启动 ----- */
-onMounted(() => {
-  fetchAll();
-});
-
-// 当 lobithRows 变化时更新图表
-watch(
-  lobithRows,
-  () => {
-    updateLobithChart();
-  },
-  { immediate: true, deep: true }
-);
-
-// 窗口尺寸变化时调整图表
+/* ----- 启动 & 清理 ----- */
 function handleResize() {
   if (lobithChartInstance) lobithChartInstance.resize();
 }
-window.addEventListener("resize", handleResize);
 
-// 启动时初始化图表并请求数据（确保你已有 fetchAll）
-onMounted(() => {
+onMounted(async () => {
   initLobithChart();
-  fetchAll();
+  window.addEventListener("resize", handleResize);
+  await fetchAll();
+  updateLobithChart();
 });
 
-// 卸载清理
+// 当“统一时间轴数据包”变化时更新图表
+watch(
+  lobithSeries,
+  () => {
+    updateLobithChart();
+  },
+  { immediate: false, deep: true }
+);
+
 onBeforeUnmount(() => {
   window.removeEventListener("resize", handleResize);
   if (lobithChartInstance) {
@@ -612,6 +534,12 @@ onBeforeUnmount(() => {
     lobithChartInstance = null;
   }
 });
+
+/* （可选）时间格式短串函数，如需展示 */
+function levelTimeDisplay(code) {
+  const t = levelTimes.value[code];
+  return t ? t.slice(0, 16).replace("T", " ") : "no data";
+}
 </script>
 
 <template>
@@ -655,10 +583,12 @@ onBeforeUnmount(() => {
         <!-- city-card -->
       </div>
       <!-- card-grid -->
+
+      <!-- 使用统一时间轴的可视化 -->
       <div
         ref="lobithChartEl"
         class="lobith-chart-container"
-        v-if="lobithRows.length"
+        v-if="lobithSeries.labels && lobithSeries.labels.length"
         role="img"
         aria-label="Lobith 水位折线图"
       ></div>
@@ -669,27 +599,27 @@ onBeforeUnmount(() => {
 <style scoped>
 .scroll-container {
   margin-left: 0;
-  margin-top: -10px; /* 顶部留出一点空白 */
+  margin-top: -10px;
   width: 100%;
   height: 500px;
   overflow: visible !important;
-  padding: 0px; /* 给内部内容一点内边距 */
+  padding: 0px;
   box-sizing: border-box;
 }
 .card-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0px; /* 卡片间距可以加大点 */
-  margin-bottom: 0px; /* <-- 关键：控制与图表的间距 */
+  gap: 0px;
+  margin-bottom: 0px;
 }
 
 .lobith-chart-container {
   width: 100%;
   box-sizing: border-box;
-  height: 300px; /* 可以改为 300 / 360，根据视觉调整 */
-  max-height: 60vh; /* 在屏幕较短时限制高度 */
-  margin-top: -45px; /* 如果想要更大间距，可以改为 8px 或 12px */
-  overflow: visible; /* 保证内部绘制不会被父元素裁切（父容器也需要支持） */
+  height: 300px;
+  max-height: 60vh;
+  margin-top: -45px;
+  overflow: visible;
   border-radius: 6px;
   background: transparent;
 }

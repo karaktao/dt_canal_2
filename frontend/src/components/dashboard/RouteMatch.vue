@@ -2,13 +2,28 @@
 <template>
   <div>
     <el-card shadow="never" class="route-match-card">
-      <div class="rm-head">
+            <div class="rm-head">
         <div class="rm-title">Matched Logistics</div>
+
+        <!-- 新按钮：Start matching -->
+        <div style="margin-left:12px">
+          <el-button
+            size="mini"
+            type="primary"
+            @click="startMatching"
+            :disabled="started || loading"
+          >
+            Start matching
+          </el-button>
+        </div>
+
         <div class="rm-info" v-if="targetAssignmentType">
           Searching: <strong>{{ targetAssignmentType }}</strong>
         </div>
       </div>
 
+
+      <!-- 只有点击 Start matching 后才会开始拉取并显示结果 -->
       <el-alert
         v-if="!targetAssignmentType"
         type="info"
@@ -17,9 +32,10 @@
         class="mb8"
       />
 
-      <el-skeleton v-else-if="loading" :rows="3" animated />
+      <!-- 如果已点击开始并且正在加载：显示骨架 -->
+      <el-skeleton v-if="started && loading" :rows="3" animated />
 
-      <div v-else>
+      <div v-else-if="started">
         <div v-if="items.length === 0" class="empty-hint">
           No matches found.
         </div>
@@ -104,7 +120,7 @@
                 </el-row>
 
                 <!-- --- ROUTE COMPARISON AREA --- -->
-                <div class="route-comparison">
+                <!-- <div class="route-comparison">
                   <div v-if="routeLoadingFor(uniqueKey(it))" style="padding:8px 0">
                     <el-skeleton :rows="2" animated />
                   </div>
@@ -112,7 +128,7 @@
                   <div v-else-if="routeResults[uniqueKey(it)]">
                     <div class="leg-table">
                       <div
-                        v-for="legKey in ['cd','ca','ab','bd']"
+                        v-for="legKey in ['ab','ca','cd','bd']"
                         :key="legKey"
                         class="leg-row"
                       >
@@ -125,8 +141,8 @@
                     </div>
 
                     <div class="ratio-area" style="margin-top:8px">
-                      <div><strong>Time ratio (cd / (ca+ab+bd)):</strong> {{ formatRatio(routeResults[uniqueKey(it)].ratios?.timeRatio) }}</div>
-                      <div><strong>Distance ratio (cd / (ca+ab+bd)):</strong> {{ formatRatio(routeResults[uniqueKey(it)].ratios?.distanceRatio) }}</div>
+                      <div><strong>Time ratio ((ca+ab+bd - cd) / cd):</strong> {{ formatRatio(routeResults[uniqueKey(it)].ratios?.timeRatio) }}</div>
+                      <div><strong>Distance ratio ((ca+ab+bd - cd) / cd):</strong> {{ formatRatio(routeResults[uniqueKey(it)].ratios?.distanceRatio) }}</div>
                     </div>
                   </div>
 
@@ -134,7 +150,7 @@
                     <div style="color:#666; font-size:13px; margin-bottom:6px">Compute route legs & ratios</div>
                     <el-button size="mini" type="primary" @click="computeForItem(it)">Compute</el-button>
                   </div>
-                </div>
+                </div> -->
 
                 <div class="details-actions">
                   <el-button size="mini" type="primary" @click="openFull(it)">Contact</el-button>
@@ -179,6 +195,22 @@ const targetAssignmentType = computed(() => {
   if (t === "cargo_to_vessel") return "vessel_to_cargo";
   return null;
 });
+
+// 匹配开关
+// 在已有的 loading/items 后新增
+const started = ref(false);
+
+// 点击按钮触发：开始匹配（拉取并计算）
+function startMatching() {
+  if (started.value) return;
+  started.value = true;
+  // 立即触发加载与计算
+  loadMatches();
+}
+
+
+
+
 
 // 简单的状态映射（同 infologistic 的映射，可复用）
 function statusClass(status) {
@@ -228,11 +260,15 @@ watch(
     () => r.value?.assignmentType,
     () => r.value?.originPort,
     () => r.value?.destinationPort,
+    () => started.value, // 也监听 started
   ],
   () => {
-    loadMatches();
+    // 只有用户点击 Start matching（started === true）后才自动触发
+    if (started.value) {
+      loadMatches();
+    }
   },
-  { immediate: true }
+  { immediate: false } // 不在组件挂载时自动调用
 );
 
 // ========== helper / UI actions ==========
@@ -288,14 +324,194 @@ function fmtNumber(v) {
   return Number.isFinite(n) ? n.toLocaleString() : String(v);
 }
 
-// 显示 match score（timeRatio + distanceRatio）
+// // 显示 match score（timeRatio + distanceRatio）
+// function displayMatchScore(it) {
+//   const key = uniqueKey(it);
+//   // 优先使用已挂载到 item 的 _routeScore（attachScoreForKey 会写入）
+//   const sc = typeof it._routeScore !== "undefined" ? it._routeScore : getScoreFromKey(key);
+//   if (sc === null || sc === undefined || sc === Number.NEGATIVE_INFINITY) return "—";
+//   return `${(sc * 100).toFixed(1)}%`;
+// }
+
+// // 从 routeResults 计算 score = timeRatio + distanceRatio（null 当作 0）
+// function getScoreFromKey(key) {
+//   const rres = routeResults.value[key];
+//   if (!rres || !rres.ratios) return null;
+//   const t = rres.ratios.timeRatio;
+//   const d = rres.ratios.distanceRatio;
+//   if (t == null && d == null) return null;
+//   return (t || 0) + (d || 0);
+// }
+
+/* ---------------------------
+   Ratio -> normalized score helper
+   --------------------------- */
+function mapRatioToScore(r, S = 1.5) {
+  if (r == null) return null;
+  const num = Number(r);
+  if (!Number.isFinite(num)) return null;
+  const pos = Math.max(0, num); // 只惩罚正值
+  const score = 1 / (1 + pos / S);
+  return Math.max(0, Math.min(1, score));
+}
+
+/* ============
+   displayMatchScore: 统一格式化并保证 0..100% 显示
+   （只保留一个实现）
+   ============ */
 function displayMatchScore(it) {
   const key = uniqueKey(it);
-  // 优先使用已挂载到 item 的 _routeScore（attachScoreForKey 会写入）
-  const sc = typeof it._routeScore !== "undefined" ? it._routeScore : getScoreFromKey(key);
-  if (sc === null || sc === undefined || sc === Number.NEGATIVE_INFINITY) return "—";
-  return `${(sc * 100).toFixed(1)}%`;
+  // 优先使用 item 上已有的 _routeScore（attachScoreForKey 会写）
+  const raw = typeof it._routeScore !== "undefined" ? it._routeScore : getScoreFromKey(key);
+  if (raw === null || raw === undefined || raw === Number.NEGATIVE_INFINITY) return "—";
+
+  const s = Number(raw);
+  if (!Number.isFinite(s)) return "—";
+  const clamped = Math.max(0, Math.min(1, s)); // 确保 0..1
+  return `${(clamped * 100).toFixed(1)}%`;
 }
+
+/* ===========================
+   getScoreFromKey: 将 ratio 映射为 0..1 的综合得分
+   替换掉原先的简单相加实现
+   =========================== */
+
+function getScoreFromKey(key) {
+  const rres = routeResults.value[key];
+  if (!rres || !rres.ratios) return null;
+
+  const t = rres.ratios.timeRatio;
+  const d = rres.ratios.distanceRatio;
+  // 如果都不存在，只能依赖时间分数（如果能算）
+  // 获取对应 item（candidate）
+  const it = items.value.find(x => uniqueKey(x) === key);
+  // cargo record 在 r.value 中（当前记录）
+  const cargoTime = extractDepartTime(r.value);
+  const vesselAvailableTime = extractAvailableStart(it);
+
+  // 计算时间得分（0..1 或 null）
+  const timeScoreTemporal = computeTemporalScore(cargoTime, vesselAvailableTime, {
+    hourScale: 6,
+    dayMultipliers: [1.0, 0.6, 0.3, 0.0],
+  });
+
+  // 现有 route score 逻辑（tScore, dScore -> combined）
+  const S_time = 1.5;
+  const S_dist = 1.5;
+  const wTimeRoute = 0.5;
+  const wDistRoute = 0.5;
+
+  const tScore = (t == null ? null : mapRatioToScore(t, S_time));
+  const dScore = (d == null ? null : mapRatioToScore(d, S_dist));
+
+  let routeScore = null;
+  if (tScore == null && dScore == null) routeScore = null;
+  else if (tScore == null) routeScore = Math.max(0, Math.min(1, dScore));
+  else if (dScore == null) routeScore = Math.max(0, Math.min(1, tScore));
+  else routeScore = Math.max(0, Math.min(1, (wTimeRoute * tScore + wDistRoute * dScore)));
+
+  // 若 routeScore 与 timeScoreTemporal 都存在 -> 合并
+  // 可调参数：timeWeight 表示时间得分在最终结果中的占比（0..1）
+  const timeWeight = 0.35; // 建议 0.25 ~ 0.4 之间调整
+  const routeWeight = 1 - timeWeight;
+
+  if (routeScore == null && (timeScoreTemporal == null || Number.isNaN(timeScoreTemporal))) return null;
+  if (routeScore == null) return timeScoreTemporal; // 只有时间分数可用
+  if (timeScoreTemporal == null) return routeScore; // 只有路线分数可用
+
+  const finalCombined = Math.max(0, Math.min(1, routeWeight * routeScore + timeWeight * timeScoreTemporal));
+  return finalCombined;
+}
+
+
+
+
+
+
+
+/* ===========================
+   时间匹配（temporal score）实现
+   =========================== */
+
+/**
+ * 从记录里抽取“装货/离开时间”（优先字段顺序可根据你数据改）
+ * 支持：uploadTime, loadTime, load_at, departureStart, departureAt, departAt, depart_at
+ */
+function extractDepartTime(obj) {
+  if (!obj) return null;
+  const candidates = [
+    "uploadTime", "loadTime", "load_at",
+    "departureStart", "departureAt", "departAt", "depart_at",
+    "availableStart", "available_from", "availableFrom"
+  ];
+  for (const k of candidates) {
+    if (obj[k]) return dayjs(obj[k]).isValid() ? dayjs(obj[k]) : null;
+  }
+  // 若对象里没有上述字段但有 date/time 组合，可扩展
+  return null;
+}
+
+/**
+ * 从候选项中抽取“可用开始时间”（船只可用时间）
+ * 你可以在这里将你的实际字段名补上：availableStart, availStart, availableFrom, startAvailable...
+ */
+function extractAvailableStart(obj) {
+  if (!obj) return null;
+  const candidates = [
+    "availableStart", "available_from", "availableFrom",
+    "availStart", "available_time_start",
+    "startTime", "start_at", "availableAt",
+    // 最后退回到 departureStart（某些数据把船开始时间放在这里）
+    "departureStart", "departureAt", "departAt"
+  ];
+  for (const k of candidates) {
+    if (obj[k]) return dayjs(obj[k]).isValid() ? dayjs(obj[k]) : null;
+  }
+  return null;
+}
+
+/**
+ * 根据货物离开时间 cargoT 和 船只可用时间 vesselT 计算 temporal score (0..1)
+ * 规则：
+ *  - dayGap = floor((vesselT - cargoT) / 24h)
+ *  - 若 vesselT <= cargoT 则 dayGap = 0（视为同天或早于）
+ *  - dayGap 映射 multiplier: [1.0, 0.6, 0.3, 0.0] 分别对应 day0, day1, day2, day>=3
+ *  - 在同天（day0）内，用小时差做细粒度惩罚：hourScore = 1 / (1 + (absHours / hourScale))
+ *    默认 hourScale = 6（6小时差会把得分降到 0.5 量级）
+ *  - 对 day1/day2 也可用小时调整（可选，下面实现用较弱的小时衰减）
+ */
+function computeTemporalScore(cargoT, vesselT, opts = {}) {
+  if (!cargoT || !vesselT) return null;
+  const hourScale = opts.hourScale ?? 6; // 同天内的小时尺度
+  const dayMultipliers = opts.dayMultipliers ?? [1.0, 0.6, 0.3, 0.0]; // day0, day1, day2, day>=3
+
+  const diffMs = vesselT.valueOf() - cargoT.valueOf();
+  // 如果船可用时间早于货物离开（diffMs <= 0）当作 dayGap = 0（同天或更早）
+  let dayGap = Math.floor(diffMs / 86400000);
+  if (diffMs <= 0) dayGap = 0;
+  if (dayGap >= 3) return 0; // 第四天以上等于 0
+
+  // hour difference (absolute hours), 用于细粒度缩放
+  const absHours = Math.abs(diffMs) / 3600000;
+
+  // 细粒度小时得分 - 同天更敏感，后几天敏感度更低
+  let hourScore;
+  if (dayGap === 0) {
+    hourScore = 1 / (1 + absHours / hourScale); // 0h -> 1, 6h -> ~0.5, 12h -> ~0.333
+  } else {
+    // day1/day2: 减弱小时敏感性（例如用更大的尺度）
+    const dayHourScale = hourScale * (1 + dayGap); // day1:12h scale, day2:18h scale
+    hourScore = 1 / (1 + Math.max(0, absHours - (24 * dayGap)) / dayHourScale);
+    // 注意：这里把 absHours - 24*dayGap 用于衡量在那一天内的小时偏移，确保合理
+  }
+
+  const multiplier = dayMultipliers[Math.min(dayGap, dayMultipliers.length - 1)];
+  const temporalScore = Math.max(0, Math.min(1, multiplier * hourScore));
+  return temporalScore;
+}
+
+
+
 
 /* ==========================
    ROUTE CALC HELPERS
@@ -326,7 +542,7 @@ function buildBody(startIsrs, endIsrs, computation = "FASTEST") {
     ShipSpeed: 0,
     DepartAt: departAt,
     CalculationOptions: {
-      ComputationType: computation, // "SHORTEST" | "FASTEST"
+      ComputationType: "FASTEST", // "SHORTEST" | "FASTEST"
       UseSailingSpeeds: true,
       UsePassageDuration: true,
       UseReducedDimensions: true,
@@ -343,32 +559,65 @@ function buildBody(startIsrs, endIsrs, computation = "FASTEST") {
   };
 }
 
-async function fetchRouteBetween(startIsrs, endIsrs, computation = "FASTEST") {
+// helper: sleep
+function sleep(ms) {
+  return new Promise((res) => setTimeout(res, ms));
+}
+
+
+async function fetchRouteBetween(startIsrs, endIsrs, computation = "FASTEST", attempts = 3, baseBackoff = 500) {
   if (!startIsrs || !endIsrs) return null;
   const body = buildBody(startIsrs, endIsrs, computation);
-  try {
-    const res = await fetch("https://www.eurisportal.eu/api/RouteCalculatorV2/Calculate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      console.warn("Route API HTTP error", res.status);
-      return null;
+
+  let attempt = 0;
+  while (attempt < attempts) {
+    try {
+      const res = await fetch("https://www.eurisportal.eu/api/RouteCalculatorV2/Calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      // 当出现 429/503 等表示限流/服务不可用时，等待并重试
+      if (res.status === 429 || res.status === 503) {
+        const retryAfter = res.headers.get("Retry-After");
+        const retryMs = retryAfter ? Number(retryAfter) * 1000 : (baseBackoff * Math.pow(2, attempt) + Math.random() * 200);
+        console.warn(`Route API returned ${res.status}, retrying after ${retryMs}ms (attempt ${attempt + 1}/${attempts})`);
+        await sleep(retryMs);
+        attempt++;
+        continue;
+      }
+
+      if (!res.ok) {
+        console.warn("Route API HTTP error", res.status);
+        // 对 4xx 中非 429 的错误直接返回 null（或根据需要特殊处理）
+        return null;
+      }
+
+      const data = await res.json();
+      const its = Array.isArray(data?.Itineraries) ? data.Itineraries : [];
+      const found = its.find(i => i?.ComputationType?.toUpperCase() === computation) || its[0] || null;
+      if (!found) return null;
+      return {
+        duration: found.TotalDuration ?? null,
+        length: found.TotalLength ?? null,
+        raw: found,
+      };
+    } catch (e) {
+      console.warn("fetchRouteBetween network/error", e, `attempt ${attempt + 1}/${attempts}`);
+      // 若还有尝试次数，等待后重试
+      if (attempt < attempts - 1) {
+        const wait = baseBackoff * Math.pow(2, attempt) + Math.random() * 200;
+        await sleep(wait);
+        attempt++;
+        continue;
+      } else {
+        // exhausted attempts
+        return null;
+      }
     }
-    const data = await res.json();
-    const its = Array.isArray(data?.Itineraries) ? data.Itineraries : [];
-    const found = its.find(i => i?.ComputationType?.toUpperCase() === computation) || its[0] || null;
-    if (!found) return null;
-    return {
-      duration: found.TotalDuration ?? null,
-      length: found.TotalLength ?? null,
-      raw: found,
-    };
-  } catch (e) {
-    console.error("fetchRouteBetween error", e);
-    return null;
   }
+  return null;
 }
 
 /**
@@ -424,6 +673,7 @@ async function computeForItem(it) {
       bd: { duration: bdR?.duration ?? null, length: bdR?.length ?? null, raw: bdR?.raw ?? null },
     };
 
+        // 之前已计算出 legs 对象与 sumDuration / sumLength
     const sumDuration = [legs.ca.duration, legs.ab.duration, legs.bd.duration]
       .map(n => (n == null ? 0 : Number(n)))
       .reduce((s, x) => s + (Number.isFinite(x) ? x : 0), 0);
@@ -431,12 +681,21 @@ async function computeForItem(it) {
       .map(n => (n == null ? 0 : Number(n)))
       .reduce((s, x) => s + (Number.isFinite(x) ? x : 0), 0);
 
-    const timeRatio = (legs.cd.duration != null && sumDuration > 0)
-      ? Number(legs.cd.duration) / sumDuration
+    // NEW formula: ratio = ((ca+ab+bd) - cd) / cd
+    // i.e. (sumDuration - cd.duration) / cd.duration
+    // protect against cd null/0 and keep null if divisor invalid
+    const cdDuration = (legs.cd.duration == null) ? null : Number(legs.cd.duration);
+    const cdLength = (legs.cd.length == null) ? null : Number(legs.cd.length);
+
+    const timeRatio = (cdDuration != null && cdDuration > 0)
+      ? ((Number(sumDuration) - cdDuration) / cdDuration)
       : null;
-    const distanceRatio = (legs.cd.length != null && sumLength > 0)
-      ? Number(legs.cd.length) / sumLength
+
+    const distanceRatio = (cdLength != null && cdLength > 0)
+      ? ((Number(sumLength) - cdLength) / cdLength)
       : null;
+
+
 
     routeResults.value = {
       ...routeResults.value,
@@ -473,15 +732,7 @@ function routeLoadingFor(key) {
 
 /* ========== SCORE / SORT helpers ========== */
 
-// 从 routeResults 计算 score = timeRatio + distanceRatio（null 当作 0）
-function getScoreFromKey(key) {
-  const rres = routeResults.value[key];
-  if (!rres || !rres.ratios) return null;
-  const t = rres.ratios.timeRatio;
-  const d = rres.ratios.distanceRatio;
-  if (t == null && d == null) return null;
-  return (t || 0) + (d || 0);
-}
+
 
 // 把 score 附到 items 中对应项，并触发排序
 function attachScoreForKey(key) {
@@ -506,11 +757,41 @@ function sortItemsByScore() {
 }
 
 // 批量触发每条记录计算（并行）。若担心并发可改为分批。
-async function computeScoresForAll() {
+async function computeScoresForAll(batchSize = 8, batchDelay = 200, retryConfig = { attempts: 3, baseBackoff: 500 }) {
   if (!items.value || items.value.length === 0) return;
-  const promises = items.value.map(it => computeForItem(it).catch(() => {}));
-  await Promise.allSettled(promises);
-  // 最后统一排序
+
+  // 可选：进度显示（在 UI 中可以读这个变量）
+  // 定义一个 reactive progress 变量（如果你想展示进度，在上面声明 const progress = ref({ total: 0, done: 0 })）
+  if (typeof progress !== "undefined" && progress) {
+    progress.total = items.value.length;
+    progress.done = 0;
+  }
+
+  const list = items.value.slice(); // snapshot
+  for (let i = 0; i < list.length; i += batchSize) {
+    const batch = list.slice(i, i + batchSize);
+    // 对每个 batch 内并发计算（fetchRouteBetween 已经包含限流重试）
+    await Promise.all(
+      batch.map((it) =>
+        // 通过 computeForItem 调用，computeForItem 内会调用 fetchRouteBetween（现在带重试）
+        computeForItem(it).catch((err) => {
+          console.warn("computeForItem failed for", uniqueKey(it), err);
+        })
+      )
+    );
+
+    // 更新进度（如果定义了 progress）
+    if (typeof progress !== "undefined" && progress) {
+      progress.done = Math.min(progress.total, progress.done + batch.length);
+    }
+
+    // 批次间短暂延迟，缓解峰值
+    if (i + batchSize < list.length) {
+      await sleep(batchDelay);
+    }
+  }
+
+  // 全部完成后排序
   sortItemsByScore();
 }
 
