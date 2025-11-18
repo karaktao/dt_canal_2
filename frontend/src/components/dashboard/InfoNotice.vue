@@ -664,8 +664,7 @@ onBeforeUnmount(() => {
   gap: 8px;
   align-items: center;
 }
-.notice-left {
-}
+
 .notice-title {
   font-weight: 600;
   font-size: 14px;
