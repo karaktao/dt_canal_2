@@ -90,6 +90,7 @@ function handleWaterRefresh(...args) {
   margin: 0;
   margin-left: 10px;
   margin-bottom: -15px; /* 紧贴上方 panel */
+  color: #333333 !important;
 }
 
 </style>

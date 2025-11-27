@@ -1289,16 +1289,7 @@ function submitForm() {
   </el-row>
 </template>
 
-
-
-
-
-    <style scoped lang="less">
-
-
-
-
-
+<style scoped lang="less">
 
 .publish-company-container {
   position: absolute;   /* 或者 fixed，看你的需求 */
@@ -1307,7 +1298,11 @@ function submitForm() {
   left: 0;              /* 根据需要调整左右 */
   right: 0;
   overflow-y: auto;     /* 内容过多时出现滚动条 */
+   background-color: #f5f7fa;
 
+}
+html.dark .publish-company-container {
+  background-color: #1e1e1e;
 }
 
 /* 左侧地图区：自动撑满剩余空间 */

@@ -1318,6 +1318,10 @@ function submitForm() {
 
 }
 
+html.dark .publish-company-container {
+  background-color: #1e1e1e;
+}
+
 /* 左侧地图区：自动撑满剩余空间 */
 .publish-company-container .map {
   flex: 2;                     /* 2:1 比例，也可以直接写 flex:1 */

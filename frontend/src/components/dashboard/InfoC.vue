@@ -87,6 +87,8 @@ defineExpose({
   padding: 0;
   box-sizing: border-box;
   background: rgba(255, 255, 255, 0.5);
+    border: none !important;      /* 去掉黑色描边 */
+  box-shadow: none !important; 
 }
 
 .info-panel-c .el-card__body {
@@ -109,6 +111,7 @@ defineExpose({
   margin: 0;
   margin-left: 10px;
   margin-bottom: -15px; /* 紧贴上方 panel */
+  color: #333333 !important;
 }
 .vessel-panel {
   padding: 8px 10px;
