@@ -47,13 +47,13 @@
 <script setup>
 import { ref, computed } from "vue";
 const list = ref([
-  {
-    path: "/home",
-    name: "home",
-    label: "Home",
-    icon: "house",
-    url: "Home",
-  },
+  // {
+  //   path: "/home",
+  //   name: "home",
+  //   label: "Home",
+  //   icon: "house",
+  //   url: "Home",
+  // },
   {
     path: "/publish",
     name: "publish",

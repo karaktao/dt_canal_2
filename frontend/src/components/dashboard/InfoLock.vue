@@ -571,6 +571,7 @@ onBeforeUnmount(() => {
 .title {
   font-weight: 600;
   font-size: 13px;
+   color: #333 !important;
 }
 .error-msg {
   color: var(--el-color-danger, #f56c6c);

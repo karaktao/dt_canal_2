@@ -1,5 +1,5 @@
 <script setup>
-import { defineEmits, onMounted } from "vue";
+import { defineEmits } from "vue";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Feature from "ol/Feature";
@@ -7,6 +7,10 @@ import { Point, Polygon } from "ol/geom";
 import { fromLonLat } from "ol/proj";
 import { Style, Fill, Stroke, Circle as CircleStyle } from "ol/style";
 import { listVNDSberth } from "@/api/infrastructure/VNDSberth";
+
+const MIN_ZOOM = 13;      // ⭐ zoom < 13 不加载 / 不显示泊位
+const PAGE_SIZE = 200;    // ⭐ 每页 200 条
+const MAX_PAGES = 14;     // ⭐ 最多只拉前 14 页
 
 const berthSource = new VectorSource();
 const berthLayer = new VectorLayer({
@@ -28,41 +32,27 @@ const berthLayer = new VectorLayer({
         });
   },
 });
+
 // 给图层设置 name，方便查找/卸载
 berthLayer.set("name", "berth");
 
 const emit = defineEmits(["map-layer-ready", "feature-clicked"]);
 
-// attachMapEvents 提供给 index.vue 调用
-async function attachMapEvents(map) {
+// 加载状态，避免重复打接口
+let berthLoaded = false;
+let berthLoading = false;
+
+/** 把接口 rows 解析成 Feature 加到图层中 */
+function addBerthFeatures(rows = []) {
   const features = [];
-const pageSize = 200;
-  const firstPage = await listVNDSberth({ pageNum: 1, pageSize });
-  const total = firstPage.total;
-  const totalPages = Math.ceil(total / pageSize);
 
-  // 并发请求后续分页数据
-  const pagePromises = [];
-  for (let i = 2; i <= totalPages; i++) {
-    pagePromises.push(listVNDSberth({ pageNum: i, pageSize }));
-  }
-  const results = await Promise.all(pagePromises);
-
-  // 合并所有数据
-  const allRows = [...firstPage.rows];
-  for (const res of results) {
-    allRows.push(...res.rows);
-  }
-  // console.log("✅ 全部泊位数据获取完成，共：", allRows.length);
-
-  // 解析 GeoJSON 并创建 Feature
-  for (const item of allRows) {
+  for (const item of rows) {
     let geo = item.geoJSON;
 
     // 如果字段是字符串，尝试转为对象
     if (typeof geo === "string") {
       try {
-        if (!geo || typeof geo !== "string") continue; // ⭐关键判断
+        if (!geo || typeof geo !== "string") continue;
         geo = JSON.parse(geo);
       } catch (e) {
         console.warn("❌ JSON 解析失败，跳过该条数据：", item.Id, item.geoJSON);
@@ -73,6 +63,7 @@ const pageSize = 200;
       console.warn("❌ GeoJSON 不完整，跳过：", item.Id, item.geoJSON);
       continue;
     }
+
     let feature = null;
     if (geo.type === "Point") {
       feature = new Feature({
@@ -89,15 +80,87 @@ const pageSize = 200;
       console.warn("❌ 不支持的类型：", geo.type);
       continue;
     }
+
     if (feature) {
       features.push(feature);
     }
   }
 
-  berthSource.clear();
   berthSource.addFeatures(features);
+}
 
-  // …保持原有的鼠标悬浮/点击事件绑定…
+/** 顺序分页加载，只拉前 MAX_PAGES 页 */
+async function loadBerthsSequential() {
+  if (berthLoading || berthLoaded) return;
+  berthLoading = true;
+
+  try {
+    // 1. 先拉第一页，拿 total
+    const firstPage = await listVNDSberth({ pageNum: 1, pageSize: PAGE_SIZE });
+    const firstRows = firstPage?.rows || firstPage?.data?.rows || [];
+    const total = firstPage?.total || firstPage?.data?.total || 0;
+
+    berthSource.clear();
+    addBerthFeatures(firstRows);
+
+    if (!total || total <= PAGE_SIZE) {
+      berthLoaded = true;
+      return;
+    }
+
+    // 2. 计算总页数，限制最多 MAX_PAGES
+    const totalPages = Math.min(Math.ceil(total / PAGE_SIZE), MAX_PAGES);
+
+    // 3. 从第 2 页开始顺序请求，避免 Promise.all 并发打爆接口
+    for (let page = 2; page <= totalPages; page++) {
+      try {
+        const res = await listVNDSberth({ pageNum: page, pageSize: PAGE_SIZE });
+        const rows = res?.rows || res?.data?.rows || [];
+        addBerthFeatures(rows);
+      } catch (err) {
+        console.error("❌ 加载 VNDSberth 第 " + page + " 页失败", err);
+        break; // 某一页失败就先停掉
+      }
+    }
+
+    berthLoaded = true;
+  } catch (e) {
+    console.error("❌ 初次加载 VNDSberth 失败：", e);
+  } finally {
+    berthLoading = false;
+  }
+}
+
+// attachMapEvents 提供给 index.vue 调用
+async function attachMapEvents(map) {
+  const view = map.getView();
+
+  const updateByZoom = async () => {
+    const zoom = view.getZoom();
+
+    // zoom < 13：不显示也不加载
+    if (zoom < MIN_ZOOM) {
+      berthSource.clear();
+      berthLoaded = false; // 下次放大再重新加载
+      return;
+    }
+
+    // zoom >= 13：如尚未加载，则顺序拉前 MAX_PAGES 页
+    if (!berthLoaded) {
+      await loadBerthsSequential();
+    }
+  };
+
+  // 初始化时跑一次
+  await updateByZoom();
+
+  // 缩放变化时更新
+  view.on("change:resolution", () => {
+    updateByZoom();
+  });
+
+  // …如果你原来有鼠标悬浮 / 点击事件，就放在这里…
+
   emit("map-layer-ready", berthLayer);
 }
 
@@ -106,7 +169,6 @@ defineExpose({
   getLayer: () => berthLayer,
 });
 </script>
-
 
 <template>
   <div style="display:none"></div>

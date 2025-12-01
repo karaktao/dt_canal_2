@@ -95,18 +95,18 @@ export const constantRoutes = [
     ]
   },
 
-  {
-    path: '/home',
-    component: Layout,
-    children: [
-      {
-        path: '',
-        name: 'LogisticsHome',
-        component: () => import('@/views/logistics/Home.vue'),
-        meta: { title: 'Home', icon: 'user' }
-      }
-    ]
-  },
+  // {
+  //   path: '/home',
+  //   component: Layout,
+  //   children: [
+  //     {
+  //       path: '',
+  //       name: 'LogisticsHome',
+  //       component: () => import('@/views/logistics/Home.vue'),
+  //       meta: { title: 'Home', icon: 'user' }
+  //     }
+  //   ]
+  // },
   {
     path: '/publishDemand',
     component: Layout,

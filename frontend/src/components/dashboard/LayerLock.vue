@@ -33,6 +33,8 @@ lockLayer.set("name", "lock");
 
 const emit = defineEmits(["map-layer-ready", "feature-clicked"]);
 
+
+
 // attachMapEvents 提供给 index.vue 调用
 async function attachMapEvents(map) {
   const features = [];

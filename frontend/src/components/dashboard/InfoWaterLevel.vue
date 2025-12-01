@@ -638,6 +638,9 @@ function levelTimeDisplay(code) {
   align-items: center;
   margin-bottom: 4px;
 }
+:deep(.loc-name) {
+  color: #333333 !important;
+}
 .card-body {
   display: flex;
   justify-content: space-between;

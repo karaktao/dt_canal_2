@@ -17,9 +17,9 @@
           </div>
         </el-tooltip>
 
-        <el-tooltip content="布局大小" effect="dark" placement="bottom">
+        <!-- <el-tooltip content="布局大小" effect="dark" placement="bottom">
           <size-select id="size-select" class="right-menu-item hover-effect" />
-        </el-tooltip>
+        </el-tooltip> -->
       </template>
 
       <el-dropdown @command="handleCommand" class="avatar-container right-menu-item hover-effect" trigger="hover">
@@ -38,9 +38,9 @@
           </el-dropdown-menu>
         </template>
       </el-dropdown>
-      <div class="right-menu-item hover-effect setting" @click="setLayout" v-if="settingsStore.showSettings">
+      <!-- <div class="right-menu-item hover-effect setting" @click="setLayout" v-if="settingsStore.showSettings">
         <svg-icon icon-class="more-up" />
-      </div>
+      </div> -->
     </div>
   </div>
 </template>
