@@ -127,27 +127,27 @@ export const constantRoutes = [
       }
     ]
   },
-  {
-    path: '/company',
-    component: Layout,
-    name: 'Company',
-    redirect: '/company/companydata', // 默认重定向到企业数据页
-    meta: { title: 'Company', icon: 'user' },
-    children: [
-      {
-        path: 'companydata',
-        name: 'CompanyData',
-        component: () => import('@/views/logistics/CompanyData.vue'),
-        meta: { title: 'Company Data', icon: 'user' }
-      },
-      {
-        path: 'companyinfo',
-        name: 'CompanyInfo',
-        component: () => import('@/views/logistics/CompanyInfo.vue'),
-        meta: { title: 'Company Info', icon: 'user' }
-      }
-    ]
-  },
+  // {
+  //   path: '/company',
+  //   component: Layout,
+  //   name: 'Company',
+  //   redirect: '/company/companydata', // 默认重定向到企业数据页
+  //   meta: { title: 'Company', icon: 'user' },
+  //   children: [
+  //     {
+  //       path: 'companydata',
+  //       name: 'CompanyData',
+  //       component: () => import('@/views/logistics/CompanyData.vue'),
+  //       meta: { title: 'Company Data', icon: 'user' }
+  //     },
+  //     {
+  //       path: 'companyinfo',
+  //       name: 'CompanyInfo',
+  //       component: () => import('@/views/logistics/CompanyInfo.vue'),
+  //       meta: { title: 'Company Info', icon: 'user' }
+  //     }
+  //   ]
+  // },
 
 
 ]

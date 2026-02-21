@@ -37,7 +37,7 @@ public class BridgeInfoController extends BaseController
     /**
      * 查询bridgeinfo列表
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:bridge:list')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:bridge:list')")
     @GetMapping("/list")
     public TableDataInfo list(BridgeInfo bridgeInfo)
     {
@@ -49,7 +49,7 @@ public class BridgeInfoController extends BaseController
     /**
      * 导出bridgeinfo列表
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:bridge:export')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:bridge:export')")
     @Log(title = "bridgeinfo", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, BridgeInfo bridgeInfo)
@@ -62,7 +62,7 @@ public class BridgeInfoController extends BaseController
     /**
      * 获取bridgeinfo详细信息
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:bridge:query')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:bridge:query')")
     @GetMapping(value = "/{id}")
     public AjaxResult getInfo(@PathVariable("id") Long id)
     {
@@ -72,7 +72,7 @@ public class BridgeInfoController extends BaseController
     /**
      * 新增bridgeinfo
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:bridge:add')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:bridge:add')")
     @Log(title = "bridgeinfo", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody BridgeInfo bridgeInfo)
@@ -83,7 +83,7 @@ public class BridgeInfoController extends BaseController
     /**
      * 修改bridgeinfo
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:bridge:edit')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:bridge:edit')")
     @Log(title = "bridgeinfo", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody BridgeInfo bridgeInfo)
@@ -94,7 +94,7 @@ public class BridgeInfoController extends BaseController
     /**
      * 删除bridgeinfo
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:bridge:remove')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:bridge:remove')")
     @Log(title = "bridgeinfo", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)

@@ -10,7 +10,7 @@
 
         <screenfull id="screenfull" class="right-menu-item hover-effect" />
 
-        <el-tooltip content="主题模式" effect="dark" placement="bottom">
+        <el-tooltip content="Theme Mode" effect="dark" placement="bottom">
           <div class="right-menu-item hover-effect theme-switch-wrapper" @click="toggleTheme">
             <svg-icon v-if="settingsStore.isDark" icon-class="sunny" />
             <svg-icon v-if="!settingsStore.isDark" icon-class="moon" />
@@ -103,6 +103,7 @@ function toggleTheme() {
 <style lang='scss' scoped>
 .navbar {
   height: 50px;
+  padding-right: 20px; 
   overflow: hidden;
   position: relative;
   background: var(--navbar-bg);

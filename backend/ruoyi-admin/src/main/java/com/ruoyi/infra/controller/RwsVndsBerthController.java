@@ -37,7 +37,7 @@ public class RwsVndsBerthController extends BaseController
     /**
      * 查询VNDS-berth列表
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSberth:list')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSberth:list')")
     @GetMapping("/list")
     public TableDataInfo list(RwsVndsBerth rwsVndsBerth)
     {
@@ -49,7 +49,7 @@ public class RwsVndsBerthController extends BaseController
     /**
      * 导出VNDS-berth列表
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSberth:export')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSberth:export')")
     @Log(title = "VNDS-berth", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, RwsVndsBerth rwsVndsBerth)
@@ -62,7 +62,7 @@ public class RwsVndsBerthController extends BaseController
     /**
      * 获取VNDS-berth详细信息
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSberth:query')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSberth:query')")
     @GetMapping(value = "/{Id}")
     public AjaxResult getInfo(@PathVariable("Id") Long Id)
     {
@@ -72,7 +72,7 @@ public class RwsVndsBerthController extends BaseController
     /**
      * 新增VNDS-berth
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSberth:add')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSberth:add')")
     @Log(title = "VNDS-berth", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody RwsVndsBerth rwsVndsBerth)
@@ -83,7 +83,7 @@ public class RwsVndsBerthController extends BaseController
     /**
      * 修改VNDS-berth
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSberth:edit')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSberth:edit')")
     @Log(title = "VNDS-berth", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody RwsVndsBerth rwsVndsBerth)
@@ -94,7 +94,7 @@ public class RwsVndsBerthController extends BaseController
     /**
      * 删除VNDS-berth
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSberth:remove')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSberth:remove')")
     @Log(title = "VNDS-berth", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{Ids}")
     public AjaxResult remove(@PathVariable Long[] Ids)

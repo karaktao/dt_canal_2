@@ -37,7 +37,7 @@ public class RwsVndsBridgeController extends BaseController
     /**
      * 查询VNDSbridge列表
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSbridge:list')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSbridge:list')")
     @GetMapping("/list")
     public TableDataInfo list(RwsVndsBridge rwsVndsBridge)
     {
@@ -49,7 +49,7 @@ public class RwsVndsBridgeController extends BaseController
     /**
      * 导出VNDSbridge列表
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSbridge:export')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSbridge:export')")
     @Log(title = "VNDSbridge", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, RwsVndsBridge rwsVndsBridge)
@@ -62,7 +62,7 @@ public class RwsVndsBridgeController extends BaseController
     /**
      * 获取VNDSbridge详细信息
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSbridge:query')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSbridge:query')")
     @GetMapping(value = "/{Id}")
     public AjaxResult getInfo(@PathVariable("Id") Long Id)
     {
@@ -72,7 +72,7 @@ public class RwsVndsBridgeController extends BaseController
     /**
      * 新增VNDSbridge
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSbridge:add')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSbridge:add')")
     @Log(title = "VNDSbridge", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody RwsVndsBridge rwsVndsBridge)
@@ -83,7 +83,7 @@ public class RwsVndsBridgeController extends BaseController
     /**
      * 修改VNDSbridge
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSbridge:edit')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSbridge:edit')")
     @Log(title = "VNDSbridge", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody RwsVndsBridge rwsVndsBridge)
@@ -94,7 +94,7 @@ public class RwsVndsBridgeController extends BaseController
     /**
      * 删除VNDSbridge
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSbridge:remove')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSbridge:remove')")
     @Log(title = "VNDSbridge", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{Ids}")
     public AjaxResult remove(@PathVariable Long[] Ids)

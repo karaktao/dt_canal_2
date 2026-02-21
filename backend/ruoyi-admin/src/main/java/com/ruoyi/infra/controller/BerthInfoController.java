@@ -37,7 +37,7 @@ public class BerthInfoController extends BaseController
     /**
      * 查询berthInfo列表
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:berth:list')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:berth:list')")
     @GetMapping("/list")
     public TableDataInfo list(BerthInfo berthInfo)
     {
@@ -49,7 +49,7 @@ public class BerthInfoController extends BaseController
     /**
      * 导出berthInfo列表
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:berth:export')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:berth:export')")
     @Log(title = "berthInfo", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, BerthInfo berthInfo)
@@ -62,7 +62,7 @@ public class BerthInfoController extends BaseController
     /**
      * 获取berthInfo详细信息
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:berth:query')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:berth:query')")
     @GetMapping(value = "/{id}")
     public AjaxResult getInfo(@PathVariable("id") Long id)
     {
@@ -72,7 +72,7 @@ public class BerthInfoController extends BaseController
     /**
      * 新增berthInfo
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:berth:add')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:berth:add')")
     @Log(title = "berthInfo", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody BerthInfo berthInfo)
@@ -83,7 +83,7 @@ public class BerthInfoController extends BaseController
     /**
      * 修改berthInfo
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:berth:edit')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:berth:edit')")
     @Log(title = "berthInfo", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody BerthInfo berthInfo)
@@ -94,7 +94,7 @@ public class BerthInfoController extends BaseController
     /**
      * 删除berthInfo
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:berth:remove')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:berth:remove')")
     @Log(title = "berthInfo", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)

@@ -37,7 +37,7 @@ public class RwsVndsLockController extends BaseController
     /**
      * 查询VNDSlock列表
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSlock:list')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSlock:list')")
     @GetMapping("/list")
     public TableDataInfo list(RwsVndsLock rwsVndsLock)
     {
@@ -49,7 +49,7 @@ public class RwsVndsLockController extends BaseController
     /**
      * 导出VNDSlock列表
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSlock:export')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSlock:export')")
     @Log(title = "VNDSlock", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, RwsVndsLock rwsVndsLock)
@@ -62,7 +62,7 @@ public class RwsVndsLockController extends BaseController
     /**
      * 获取VNDSlock详细信息
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSlock:query')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSlock:query')")
     @GetMapping(value = "/{Id}")
     public AjaxResult getInfo(@PathVariable("Id") Long Id)
     {
@@ -72,7 +72,7 @@ public class RwsVndsLockController extends BaseController
     /**
      * 新增VNDSlock
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSlock:add')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSlock:add')")
     @Log(title = "VNDSlock", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody RwsVndsLock rwsVndsLock)
@@ -83,7 +83,7 @@ public class RwsVndsLockController extends BaseController
     /**
      * 修改VNDSlock
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSlock:edit')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSlock:edit')")
     @Log(title = "VNDSlock", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody RwsVndsLock rwsVndsLock)
@@ -94,7 +94,7 @@ public class RwsVndsLockController extends BaseController
     /**
      * 删除VNDSlock
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSlock:remove')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:VNDSlock:remove')")
     @Log(title = "VNDSlock", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{Ids}")
     public AjaxResult remove(@PathVariable Long[] Ids)

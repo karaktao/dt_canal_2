@@ -37,7 +37,7 @@ public class LockInfoController extends BaseController
     /**
      * 查询lockinfo列表
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:lock:list')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:lock:list')")
     @GetMapping("/list")
     public TableDataInfo list(LockInfo lockInfo)
     {
@@ -49,7 +49,7 @@ public class LockInfoController extends BaseController
     /**
      * 导出lockinfo列表
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:lock:export')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:lock:export')")
     @Log(title = "lockinfo", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, LockInfo lockInfo)
@@ -62,7 +62,7 @@ public class LockInfoController extends BaseController
     /**
      * 获取lockinfo详细信息
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:lock:query')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:lock:query')")
     @GetMapping(value = "/{id}")
     public AjaxResult getInfo(@PathVariable("id") Long id)
     {
@@ -72,7 +72,7 @@ public class LockInfoController extends BaseController
     /**
      * 新增lockinfo
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:lock:add')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:lock:add')")
     @Log(title = "lockinfo", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody LockInfo lockInfo)
@@ -83,7 +83,7 @@ public class LockInfoController extends BaseController
     /**
      * 修改lockinfo
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:lock:edit')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:lock:edit')")
     @Log(title = "lockinfo", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody LockInfo lockInfo)
@@ -94,7 +94,7 @@ public class LockInfoController extends BaseController
     /**
      * 删除lockinfo
      */
-    @PreAuthorize("@ss.hasPermi('infrastructure:lock:remove')")
+//    @PreAuthorize("@ss.hasPermi('infrastructure:lock:remove')")
     @Log(title = "lockinfo", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)
